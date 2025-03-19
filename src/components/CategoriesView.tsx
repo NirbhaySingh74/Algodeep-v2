@@ -1,24 +1,52 @@
-"use client";
-
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
-import { ChevronDown, ExternalLink, Star, Check } from "lucide-react";
+import { ChevronDown, ExternalLink, Star, CheckCircle, Clock } from "lucide-react";
 import { categories, problems, Problem, Category } from "@/data/problems";
 import { useNavbar } from "@/lib/useNavbar";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+
+const difficultyColors = {
+  Easy: { bg: "bg-green-900", text: "text-green-300" },
+  Medium: { bg: "bg-yellow-900", text: "text-yellow-300" },
+  Hard: { bg: "bg-red-900", text: "text-red-300" },
+};
+
+interface ExtendedProblem extends Problem {
+  solved: boolean;
+  favorite: boolean;
+  lastAttempted?: string;
+  solved_at?: string | null; // Add solved_at to store the timestamp
+}
 
 const CategoriesView: React.FC = () => {
   const { viewMode, selectedCategory, setSelectedCategory, updateStat } = useAppStore();
   const { user, isLoading: sessionLoading } = useNavbar();
-  const [problemsData, setProblemsData] = React.useState<Problem[]>(problems);
+  const [problemsData, setProblemsData] = React.useState<ExtendedProblem[]>(
+    problems.map((p) => ({
+      ...p,
+      solved: false,
+      favorite: false,
+      lastAttempted: undefined,
+      solved_at: null,
+    }))
+  );
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (user?.id) {
       fetchUserProblems();
     } else {
-      setProblemsData(problems.map((p) => ({ ...p, solved: false })));
+      setProblemsData(
+        problems.map((p) => ({
+          ...p,
+          solved: false,
+          favorite: false,
+          lastAttempted: undefined,
+          solved_at: null,
+        }))
+      );
     }
   }, [user]);
 
@@ -28,35 +56,57 @@ const CategoriesView: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from("user_problems")
-        .select("problem_id")
+        .select("problem_id, last_attempted, favorite, solved_at")
         .eq("user_id", user.id);
 
-      if (error) throw error;
+      if (error) throw new Error(`Fetch failed: ${error.message}, code: ${error.code}`);
 
-      const solvedProblemIds = new Set(data?.map((up: any) => up.problem_id));
+      const solvedProblemIds = new Set(
+        data?.filter((up: any) => up.solved_at !== null).map((up: any) => up.problem_id)
+      );
+      const favoriteProblemIds = new Set(
+        data?.filter((up: any) => up.favorite).map((up: any) => up.problem_id)
+      );
+      const lastAttemptedMap = new Map(
+        data?.map((up: any) => [up.problem_id, up.last_attempted])
+      );
+      const solvedAtMap = new Map(
+        data?.map((up: any) => [up.problem_id, up.solved_at])
+      );
+
       setProblemsData(
         problems.map((problem) => ({
           ...problem,
           solved: solvedProblemIds.has(problem.id.toString()),
+          favorite: favoriteProblemIds.has(problem.id.toString()),
+          lastAttempted: lastAttemptedMap.get(problem.id.toString()),
+          solved_at: solvedAtMap.get(problem.id.toString()),
         }))
       );
-    } catch (err) {
-      console.error("Fetch error:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch user problems");
-      setProblemsData(problems.map((p) => ({ ...p, solved: false })));
+    } catch (err: any) {
+      console.error("Fetch error:", err.message || err);
+      setError(err.message || "Failed to fetch user problems");
+      setProblemsData(
+        problems.map((p) => ({
+          ...p,
+          solved: false,
+          favorite: false,
+          lastAttempted: undefined,
+          solved_at: null,
+        }))
+      );
     }
   };
 
   const updateProblemStatus = async (problemId: number, solved: boolean) => {
+    setProblemsData((prev) =>
+      prev.map((p) => (p.id === problemId ? { ...p, solved, solved_at: solved ? new Date().toISOString() : null } : p))
+    );
+
     if (!user?.id) {
-      setError("Please log in to mark problems as solved");
+      setError("Changes are not saved. Please log in to save your progress.");
       return;
     }
-
-    // Optimistically update the UI first
-    setProblemsData((prev) =>
-      prev.map((p) => (p.id === problemId ? { ...p, solved } : p))
-    );
 
     try {
       const problem = problemsData.find((p) => p.id === problemId);
@@ -70,22 +120,49 @@ const CategoriesView: React.FC = () => {
           : "hard_solved";
 
       if (solved) {
-        const { error: insertError } = await supabase
+        const { error: upsertError } = await supabase
           .from("user_problems")
-          .insert({
-            user_id: user.id,
-            problem_id: problemId.toString(),
-          });
-        if (insertError) throw insertError;
+          .upsert(
+            {
+              user_id: user.id,
+              problem_id: problemId.toString(),
+              favorite: problem.favorite || false,
+              last_attempted: problem.lastAttempted || null,
+              solved_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,problem_id" }
+          );
+        if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}, code: ${upsertError.code}`);
       } else {
-        const { error: deleteError } = await supabase
+        const { data: existing, error: fetchError } = await supabase
           .from("user_problems")
-          .delete()
-          .match({
-            user_id: user.id,
-            problem_id: problemId.toString(),
-          });
-        if (deleteError) throw deleteError;
+          .select("favorite, last_attempted")
+          .eq("user_id", user.id)
+          .eq("problem_id", problemId.toString())
+          .single();
+
+        if (fetchError && fetchError.code !== "PGRST116")
+          throw new Error(`Fetch existing failed: ${fetchError.message}`);
+
+        if (existing && (existing.favorite || existing.last_attempted)) {
+          const { error: updateError } = await supabase
+            .from("user_problems")
+            .update({
+              favorite: existing.favorite,
+              last_attempted: existing.last_attempted,
+              solved_at: null,
+            })
+            .eq("user_id", user.id)
+            .eq("problem_id", problemId.toString());
+          if (updateError) throw new Error(`Update failed: ${updateError.message}`);
+        } else {
+          const { error: deleteError } = await supabase
+            .from("user_problems")
+            .delete()
+            .eq("user_id", user.id)
+            .eq("problem_id", problemId.toString());
+          if (deleteError) throw new Error(`Delete failed: ${deleteError.message}`);
+        }
       }
 
       const { data: profileData, error: profileError } = await supabase
@@ -94,7 +171,7 @@ const CategoriesView: React.FC = () => {
         .eq("id", user.id)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) throw new Error(`Profile fetch failed: ${profileError.message}`);
 
       const currentCount = profileData?.[difficultyField] || 0;
       const newCount = solved ? currentCount + 1 : Math.max(currentCount - 1, 0);
@@ -104,35 +181,109 @@ const CategoriesView: React.FC = () => {
         .update({ [difficultyField]: newCount })
         .eq("id", user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) throw new Error(`Profile update failed: ${updateError.message}`);
 
       updateStat(problem.difficulty as "Easy" | "Medium" | "Hard", solved);
-    } catch (err) {
-      console.error("Update error:", err);
-      // Revert optimistic update on error
+    } catch (err: any) {
+      console.error("Update error:", err.message || err);
       setProblemsData((prev) =>
-        prev.map((p) => (p.id === problemId ? { ...p, solved: !solved } : p))
+        prev.map((p) => (p.id === problemId ? { ...p, solved: !solved, solved_at: !solved ? null : p.solved_at } : p))
       );
-      setError(err instanceof Error ? err.message : "Failed to update problem status");
+      setError(err.message || "Failed to update problem status");
     }
+  };
+
+  const toggleFavorite = async (problemId: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    const problem = problemsData.find((p) => p.id === problemId);
+    const newFavoriteStatus = !problem?.favorite;
+
+    setProblemsData((prev) =>
+      prev.map((p) => (p.id === problemId ? { ...p, favorite: newFavoriteStatus } : p))
+    );
+
+    if (!user?.id) {
+      setError("Changes are not saved. Please log in to save your progress.");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("user_problems")
+        .upsert(
+          {
+            user_id: user.id,
+            problem_id: problemId.toString(),
+            favorite: newFavoriteStatus,
+            last_attempted: problem?.lastAttempted || null,
+            solved_at: problem?.solved ? problem.solved_at || new Date().toISOString() : null,
+          },
+          { onConflict: "user_id,problem_id" }
+        );
+
+      if (error) throw new Error(`Favorite upsert failed: ${error.message}, code: ${error.code}`);
+    } catch (err: any) {
+      console.error("Favorite update error:", err.message || err);
+      setProblemsData((prev) =>
+        prev.map((p) => (p.id === problemId ? { ...p, favorite: !newFavoriteStatus } : p))
+      );
+      setError(err.message || "Failed to update favorite status");
+    }
+  };
+
+  const updateLastAttempted = async (problemId: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    const newLastAttempted = new Date().toISOString();
+    const problem = problemsData.find((p) => p.id === problemId);
+
+    setProblemsData((prev) =>
+      prev.map((p) => (p.id === problemId ? { ...p, lastAttempted: newLastAttempted } : p))
+    );
+
+    if (!user?.id) {
+      setError("Changes are not saved. Please log in to save your progress.");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("user_problems")
+        .upsert(
+          {
+            user_id: user.id,
+            problem_id: problemId.toString(),
+            last_attempted: newLastAttempted,
+            favorite: problem?.favorite || false,
+            solved_at: problem?.solved ? problem.solved_at || new Date().toISOString() : null,
+          },
+          { onConflict: "user_id,problem_id" }
+        );
+
+      if (error) throw new Error(`Last attempted upsert failed: ${error.message}, code: ${error.code}`);
+    } catch (err: any) {
+      console.error("Last attempted update error:", err.message || err);
+      setProblemsData((prev) =>
+        prev.map((p) => (p.id === problemId ? { ...p, lastAttempted: undefined } : p))
+      );
+      setError(err.message || "Failed to update last attempted");
+    }
+  };
+
+  const handleProblemClick = (problem: ExtendedProblem) => {
+    window.open(problem.link, "_blank");
   };
 
   if (sessionLoading) {
     return <div className="text-white">Loading session...</div>;
   }
 
-  if (!user) {
-    return <div className="text-white">Please log in to view your progress</div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500">{error}</div>;
-  }
-
   return (
     <>
       {viewMode === "categories" && (
         <motion.div className="space-y-4">
+          {error && <div className="text-red-500 mb-4">{error}</div>}
           {categories.map((category) => (
             <motion.div
               key={category.id}
@@ -187,121 +338,157 @@ const CategoriesView: React.FC = () => {
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <table className="min-w-full divide-y divide-gray-800">
-                      <thead className="bg-gray-800">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                            Status
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                            Title
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                            Difficulty
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-gray-900 divide-y divide-gray-800">
-                        {problemsData
-                          .filter((problem) => problem.category === category.id)
-                          .map((problem, index) => (
-                            <motion.tr
-                              key={problem.id}
-                              className="hover:bg-gray-800 cursor-pointer"
-                              custom={index}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{
-                                opacity: 1,
-                                y: 0,
-                                transition: {
-                                  delay: index * 0.05,
-                                  duration: 0.3,
-                                },
-                              }}
-                            >
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    updateProblemStatus(problem.id, !problem.solved);
-                                  }}
-                                  className="relative"
-                                >
-                                  <motion.div
-                                    className={`h-6 w-6 rounded-md flex items-center justify-center cursor-pointer border-2 ${
-                                      problem.solved
-                                        ? "bg-gradient-to-r from-indigo-500-to-purple-600 border-transparent shadow-lg shadow-purple-900/50"
-                                        : "bg-transparent border-gray-600 hover:border-gray-400"
-                                    }`}
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-800">
+                        <thead className="bg-gray-800">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-16">
+                              Status
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                              Title
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-28">
+                              Difficulty
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-28">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-gray-900 divide-y divide-gray-800">
+                          {problemsData
+                            .filter((problem) => problem.category === category.id)
+                            .map((problem, index) => (
+                              <motion.tr
+                                key={problem.id}
+                                className="hover:bg-gray-800 cursor-pointer group"
+                                custom={index}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{
+                                  opacity: 1,
+                                  y: 0,
+                                  transition: { delay: index * 0.02, duration: 0.2 },
+                                }}
+                                onClick={() => handleProblemClick(problem)}
+                                whileHover={{ backgroundColor: "rgba(31, 41, 55, 0.8)" }}
+                              >
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <motion.div
+                                          className="flex items-center justify-center"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            updateProblemStatus(problem.id, !problem.solved);
+                                          }}
+                                          whileHover={{ scale: 1.2 }}
+                                        >
+                                          {problem.solved ? (
+                                            <CheckCircle className="h-5 w-5 text-green-500" />
+                                          ) : (
+                                            <div className="h-5 w-5 rounded-full border-2 border-gray-600 group-hover:border-gray-400" />
+                                          )}
+                                        </motion.div>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>{problem.solved ? "Mark as unsolved" : "Mark as solved"}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <div className="flex items-center">
+                                    <span className="text-sm font-medium mr-2 text-gray-500">{problem.id}.</span>
+                                    <div className="text-sm font-medium">
+                                      {problem.title}
+                                      {problem.favorite && <Star className="h-3 w-3 text-amber-400 inline ml-2" />}
+                                    </div>
+                                  </div>
+                                  {problem.lastAttempted && (
+                                    <div className="text-xs text-gray-500 mt-1 flex items-center">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      Last attempted: {new Date(problem.lastAttempted).toLocaleDateString()}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <span
+                                    className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                      difficultyColors[problem.difficulty].bg
+                                    } ${difficultyColors[problem.difficulty].text}`}
                                   >
-                                    {problem.solved && (
-                                      <Check className="h-4 w-4 text-white" />
-                                    )}
-                                  </motion.div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div
-                                  className={`text-sm font-medium ${
-                                    problem.solved ? "text-indigo-400" : ""
-                                  }`}
-                                >
-                                  <a
-                                    href={problem.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    {problem.title}
-                                  </a>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span
-                                  className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                    problem.difficulty === "Easy"
-                                      ? "bg-green-900 text-green-300"
-                                      : problem.difficulty === "Medium"
-                                      ? "bg-yellow-900 text-yellow-300"
-                                      : "bg-red-900 text-red-300"
-                                  }`}
-                                >
-                                  {problem.difficulty}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex space-x-2">
-                                  <a
-                                    href={problem.link}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <motion.button
-                                      className="p-1 rounded-full bg-indigo-900 text-indigo-300 hover:bg-indigo-800"
-                                      whileHover={{ scale: 1.1 }}
-                                      whileTap={{ scale: 0.9 }}
-                                    >
-                                      <ExternalLink className="h-4 w-4" />
-                                    </motion.button>
-                                  </a>
-                                  <motion.button
-                                    className="p-1 rounded-full bg-purple-900 text-purple-300 hover:bg-purple-800"
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                  >
-                                    <Star className="h-4 w-4" />
-                                  </motion.button>
-                                </div>
-                              </td>
-                            </motion.tr>
-                          ))}
-                      </tbody>
-                    </table>
+                                    {problem.difficulty}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <div className="flex space-x-2">
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <motion.button
+                                            className="p-1 rounded-full bg-indigo-900 text-indigo-300 hover:bg-indigo-800"
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.9 }}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              window.open(problem.link, "_blank");
+                                            }}
+                                          >
+                                            <ExternalLink className="h-4 w-4" />
+                                          </motion.button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Open problem</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <motion.button
+                                            className={`p-1 rounded-full ${
+                                              problem.favorite
+                                                ? "bg-amber-700 text-amber-300"
+                                                : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                                            }`}
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.9 }}
+                                            onClick={(e) => toggleFavorite(problem.id, e)}
+                                          >
+                                            <Star className="h-4 w-4" />
+                                          </motion.button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>{problem.favorite ? "Remove from favorites" : "Add to favorites"}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <motion.button
+                                            className="p-1 rounded-full bg-blue-900 text-blue-300 hover:bg-blue-800"
+                                            whileHover={{ scale: 1.1 }}
+                                            whileTap={{ scale: 0.9 }}
+                                            onClick={(e) => updateLastAttempted(problem.id, e)}
+                                          >
+                                            <Clock className="h-4 w-4" />
+                                          </motion.button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Mark as attempted</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
+                                </td>
+                              </motion.tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -1,4 +1,3 @@
-// components/Sidebar.tsx
 "use client";
 
 import React, { useEffect } from "react";
@@ -47,21 +46,30 @@ const Sidebar: React.FC = () => {
       }
 
       try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("easy_solved, medium_solved, hard_solved")
-          .eq("id", user.id)
-          .single();
+        // Fetch solved problems from user_problems where solved = true
+        const { data: userProblems, error: userProblemsError } = await supabase
+          .from("user_problems")
+          .select("problem_id")
+          .eq("user_id", user.id)
+          .eq("solved", true); // Only count explicitly solved problems
 
-        if (error) throw error;
+        if (userProblemsError) throw new Error(`Failed to fetch user problems: ${userProblemsError.message}`);
+
+        const solvedProblemIds = new Set(userProblems.map((up: any) => up.problem_id));
+        const solvedProblems = problems.filter((p) => solvedProblemIds.has(p.id.toString()));
+
+        const easySolved = solvedProblems.filter((p) => p.difficulty === "Easy").length;
+        const mediumSolved = solvedProblems.filter((p) => p.difficulty === "Medium").length;
+        const hardSolved = solvedProblems.filter((p) => p.difficulty === "Hard").length;
 
         setStats({
-          easySolved: data?.easy_solved || 0,
-          mediumSolved: data?.medium_solved || 0,
-          hardSolved: data?.hard_solved || 0,
+          easySolved,
+          mediumSolved,
+          hardSolved,
         });
       } catch (err) {
         console.error("Error fetching stats:", err);
+        setStats({ easySolved: 0, mediumSolved: 0, hardSolved: 0 });
       }
     };
 
@@ -69,21 +77,17 @@ const Sidebar: React.FC = () => {
 
     if (user?.id) {
       const channel = supabase
-        .channel("profiles_changes")
+        .channel("user_problems_changes")
         .on(
           "postgres_changes",
           {
-            event: "UPDATE",
+            event: "*",
             schema: "public",
-            table: "profiles",
-            filter: `id=eq.${user.id}`,
+            table: "user_problems",
+            filter: `user_id=eq.${user.id}`,
           },
-          (payload) => {
-            setStats({
-              easySolved: payload.new.easy_solved || 0,
-              mediumSolved: payload.new.medium_solved || 0,
-              hardSolved: payload.new.hard_solved || 0,
-            });
+          async () => {
+            await fetchStats();
           }
         )
         .subscribe();
@@ -98,7 +102,8 @@ const Sidebar: React.FC = () => {
   const isCompaniesView = pathname
     ? pathname === "/practice/companies" || pathname.startsWith("/practice/companies/")
     : false;
-console.log("user", user);
+
+  console.log("user", user);
 
   return (
     <motion.div
@@ -241,8 +246,8 @@ console.log("user", user);
         </div>
         {!sidebarCollapsed && (
           <motion.span className="ml-2 text-gray-200">
-          {user?.full_name ? user.full_name : "Login"}
-        </motion.span>
+            {user?.full_name ? user.full_name : "Login"}
+          </motion.span>
         )}
       </div>
     </motion.div>

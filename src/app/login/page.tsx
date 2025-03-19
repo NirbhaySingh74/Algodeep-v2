@@ -91,7 +91,7 @@ function App() {
                   <Code2 className="h-14 w-14 text-[#a29bfe] drop-shadow-lg" />
                 </div>
                 <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">
-                  Welcome to AlgoMaster
+                  Welcome to AlgoGrid
                 </h1>
                 <p className="text-gray-400 text-sm sm:text-base">
                   {authView === "sign_in"
