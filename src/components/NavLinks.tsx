@@ -10,7 +10,7 @@ const NavLinks = () => {
 
   return (
     <>
-      <Link href="/practice" className={`flex items-center ${isActive("/practice")}`}>
+      <Link href="/practice/categories" className={`flex items-center ${isActive("/practice")}`}>
         <BookOpen className="h-5 w-5 mr-1" />
         <span>Practice</span>
       </Link>

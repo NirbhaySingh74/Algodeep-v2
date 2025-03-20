@@ -80,7 +80,7 @@ export default function HeroSection() {
           whileHover={{ scale: 1.1, y: -5 }} // Subtle bounce on hover
         >
           <Link
-            href="/practice"
+            href="/practice/categories"
             className="inline-flex items-center px-8 py-4 text-lg font-medium text-white bg-gradient-to-r from-[#6c5ce7] to-[#00b894] rounded-lg shadow-lg hover:from-[#5a4ad1] hover:to-[#00a382] transition-all duration-300 transform hover:scale-105"
           >
             Start Practicing

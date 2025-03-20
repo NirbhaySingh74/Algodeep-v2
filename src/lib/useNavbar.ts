@@ -1,3 +1,4 @@
+// src/lib/useNavbar.ts
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 
@@ -5,123 +6,87 @@ export const useNavbar = () => {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchUserAndProfile = async (sessionOverride?: any) => {
+    try {
+      const { data: { session }, error: sessionError } = sessionOverride
+        ? { data: { session: sessionOverride }, error: null }
+        : await supabase.auth.getSession();
+
+      if (sessionError) throw new Error("Session fetch error: " + sessionError.message);
+
+      let currentUser = null;
+
+      if (session?.user) {
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("full_name, avatar_url")
+          .eq("id", session.user.id)
+          .single();
+
+        if (profileError && profileError.code !== "PGRST116") {
+          console.error("Profile fetch error:", profileError);
+        }
+
+        currentUser = {
+          ...session.user,
+          full_name: profile?.full_name || session.user.user_metadata?.full_name || session.user.email?.split("@")[0],
+          avatar_url: profile?.avatar_url || null,
+        };
+
+        localStorage.setItem("cachedUser", JSON.stringify(currentUser));
+      } else {
+        localStorage.removeItem("cachedUser");
+      }
+
+      setUser(currentUser);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      setUser(null);
+      localStorage.removeItem("cachedUser");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let isMounted = true; // Track if the component is still mounted
-    
-    // Store session in localStorage to prevent loading state on route changes
-    const cachedUser = localStorage.getItem('cachedUser');
-    if (cachedUser && isMounted) {
+    let isMounted = true;
+
+    // Load cached user immediately
+    const cachedUser = localStorage.getItem("cachedUser");
+    if (cachedUser) {
       try {
         setUser(JSON.parse(cachedUser));
-        setIsLoading(false);
+        setIsLoading(false); // Skip loading if cached
       } catch (error) {
         console.error("Error parsing cached user:", error);
+        fetchUserAndProfile(); // Fallback to fetch
       }
+    } else {
+      fetchUserAndProfile();
     }
-  
-    const fetchUserAndProfile = async () => {
-      try {
-        // Start with getSession to check if there's an active session
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-        
-        // Only log errors, not sensitive session data
-        if (sessionError) {
-          console.error("Session fetch error:", sessionError);
-        }
-  
-        let currentUser = null;
-  
-        if (session?.user) {
-          // If we have a session user, fetch their profile
-          const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("full_name, avatar_url")
-            .eq("id", session.user.id)
-            .single();
-  
-          if (profileError) {
-            console.error("Profile fetch error:", profileError);
-          }
-  
-          currentUser = {
-            ...session.user,
-            full_name: profile?.full_name || session.user.user_metadata?.full_name,
-            avatar_url: profile?.avatar_url || null,
-          };
-          
-          // Cache the user data in localStorage
-          localStorage.setItem('cachedUser', JSON.stringify(currentUser));
-        } else {
-          // Clear cached user if no session
-          localStorage.removeItem('cachedUser');
-        }
-  
-        // Important: Set state only if component is still mounted
-        if (isMounted) {
-          setUser(currentUser);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error("Error fetching user and profile:", error);
-        if (isMounted) {
-          setIsLoading(false);
-        }
+
+    // Auth state listener
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+
+      if (["SIGNED_IN", "SIGNED_OUT", "USER_UPDATED"].includes(event)) {
+        fetchUserAndProfile(session);
+      }
+    });
+
+    // Sync across tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "cachedUser" && isMounted) {
+        const newUser = e.newValue ? JSON.parse(e.newValue) : null;
+        setUser(newUser);
       }
     };
-  
-    // Initial fetch
-    fetchUserAndProfile();
-  
-    // Set up auth state change listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        // Only set loading to true for sign in and sign out events
-        if (['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED'].includes(event) && isMounted) {
-          setIsLoading(true);
-        }
-        
-        // Log event type but not sensitive session data
-        console.log("Auth state change event:", event);
-  
-        let updatedUser = null;
-  
-        if (session?.user) {
-          const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("full_name, avatar_url")
-            .eq("id", session.user.id)
-            .single();
-  
-          if (profileError) {
-            console.error("Profile fetch error:", profileError);
-          }
-  
-          updatedUser = {
-            ...session.user,
-            full_name: profile?.full_name || session.user.user_metadata?.full_name,
-            avatar_url: profile?.avatar_url || null,
-          };
-          
-          // Update cached user
-          localStorage.setItem('cachedUser', JSON.stringify(updatedUser));
-        } else {
-          // Clear cached user
-          localStorage.removeItem('cachedUser');
-        }
-  
-        if (isMounted) {
-          setUser(updatedUser);
-          setIsLoading(false);
-        }
-      }
-    );
-  
+    window.addEventListener("storage", handleStorageChange);
+
     return () => {
-      isMounted = false; // Cleanup
+      isMounted = false;
       authListener.subscription.unsubscribe();
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 

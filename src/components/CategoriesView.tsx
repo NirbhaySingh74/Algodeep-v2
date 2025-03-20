@@ -1,3 +1,4 @@
+// CategoriesView.tsx
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/store/store";
@@ -17,36 +18,34 @@ interface ExtendedProblem extends Problem {
   solved: boolean;
   favorite: boolean;
   lastAttempted?: string;
-  solved_at?: string | null; // Add solved_at to store the timestamp
+  solved_at?: string | null;
 }
 
 const CategoriesView: React.FC = () => {
   const { viewMode, selectedCategory, setSelectedCategory, updateStat } = useAppStore();
   const { user, isLoading: sessionLoading } = useNavbar();
-  const [problemsData, setProblemsData] = React.useState<ExtendedProblem[]>(
-    problems.map((p) => ({
-      ...p,
-      solved: false,
-      favorite: false,
-      lastAttempted: undefined,
-      solved_at: null,
-    }))
-  );
+  const [problemsData, setProblemsData] = React.useState<ExtendedProblem[]>(problems.map((p) => ({
+    ...p,
+    solved: false,
+    favorite: false,
+    lastAttempted: undefined,
+    solved_at: null,
+  })));
   const [error, setError] = React.useState<string | null>(null);
+  const [isInitialFetch, setIsInitialFetch] = React.useState(true);
 
   React.useEffect(() => {
     if (user?.id) {
       fetchUserProblems();
     } else {
-      setProblemsData(
-        problems.map((p) => ({
-          ...p,
-          solved: false,
-          favorite: false,
-          lastAttempted: undefined,
-          solved_at: null,
-        }))
-      );
+      setProblemsData(problems.map((p) => ({
+        ...p,
+        solved: false,
+        favorite: false,
+        lastAttempted: undefined,
+        solved_at: null,
+      })));
+      setIsInitialFetch(false);
     }
   }, [user]);
 
@@ -59,42 +58,25 @@ const CategoriesView: React.FC = () => {
         .select("problem_id, last_attempted, favorite, solved_at")
         .eq("user_id", user.id);
 
-      if (error) throw new Error(`Fetch failed: ${error.message}, code: ${error.code}`);
+      if (error) throw new Error(`Fetch failed: ${error.message}`);
 
-      const solvedProblemIds = new Set(
-        data?.filter((up: any) => up.solved_at !== null).map((up: any) => up.problem_id)
-      );
-      const favoriteProblemIds = new Set(
-        data?.filter((up: any) => up.favorite).map((up: any) => up.problem_id)
-      );
-      const lastAttemptedMap = new Map(
-        data?.map((up: any) => [up.problem_id, up.last_attempted])
-      );
-      const solvedAtMap = new Map(
-        data?.map((up: any) => [up.problem_id, up.solved_at])
-      );
+      const solvedProblemIds = new Set(data?.filter((up: any) => up.solved_at !== null).map((up: any) => up.problem_id));
+      const favoriteProblemIds = new Set(data?.filter((up: any) => up.favorite).map((up: any) => up.problem_id));
+      const lastAttemptedMap = new Map(data?.map((up: any) => [up.problem_id, up.last_attempted]));
+      const solvedAtMap = new Map(data?.map((up: any) => [up.problem_id, up.solved_at]));
 
-      setProblemsData(
-        problems.map((problem) => ({
-          ...problem,
-          solved: solvedProblemIds.has(problem.id.toString()),
-          favorite: favoriteProblemIds.has(problem.id.toString()),
-          lastAttempted: lastAttemptedMap.get(problem.id.toString()),
-          solved_at: solvedAtMap.get(problem.id.toString()),
-        }))
-      );
+      setProblemsData(problems.map((problem) => ({
+        ...problem,
+        solved: solvedProblemIds.has(problem.id.toString()),
+        favorite: favoriteProblemIds.has(problem.id.toString()),
+        lastAttempted: lastAttemptedMap.get(problem.id.toString()),
+        solved_at: solvedAtMap.get(problem.id.toString()),
+      })));
     } catch (err: any) {
-      console.error("Fetch error:", err.message || err);
-      setError(err.message || "Failed to fetch user problems");
-      setProblemsData(
-        problems.map((p) => ({
-          ...p,
-          solved: false,
-          favorite: false,
-          lastAttempted: undefined,
-          solved_at: null,
-        }))
-      );
+      console.error("Fetch error:", err.message);
+      setError("Failed to fetch user problems");
+    } finally {
+      setIsInitialFetch(false);
     }
   };
 
@@ -113,11 +95,7 @@ const CategoriesView: React.FC = () => {
       if (!problem) throw new Error(`Problem ${problemId} not found`);
 
       const difficultyField =
-        problem.difficulty === "Easy"
-          ? "easy_solved"
-          : problem.difficulty === "Medium"
-          ? "medium_solved"
-          : "hard_solved";
+        problem.difficulty === "Easy" ? "easy_solved" : problem.difficulty === "Medium" ? "medium_solved" : "hard_solved";
 
       if (solved) {
         const { error: upsertError } = await supabase
@@ -132,7 +110,7 @@ const CategoriesView: React.FC = () => {
             },
             { onConflict: "user_id,problem_id" }
           );
-        if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}, code: ${upsertError.code}`);
+        if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}`);
       } else {
         const { data: existing, error: fetchError } = await supabase
           .from("user_problems")
@@ -141,8 +119,7 @@ const CategoriesView: React.FC = () => {
           .eq("problem_id", problemId.toString())
           .single();
 
-        if (fetchError && fetchError.code !== "PGRST116")
-          throw new Error(`Fetch existing failed: ${fetchError.message}`);
+        if (fetchError && fetchError.code !== "PGRST116") throw new Error(`Fetch existing failed: ${fetchError.message}`);
 
         if (existing && (existing.favorite || existing.last_attempted)) {
           const { error: updateError } = await supabase
@@ -185,7 +162,7 @@ const CategoriesView: React.FC = () => {
 
       updateStat(problem.difficulty as "Easy" | "Medium" | "Hard", solved);
     } catch (err: any) {
-      console.error("Update error:", err.message || err);
+      console.error("Update error:", err.message);
       setProblemsData((prev) =>
         prev.map((p) => (p.id === problemId ? { ...p, solved: !solved, solved_at: !solved ? null : p.solved_at } : p))
       );
@@ -195,13 +172,10 @@ const CategoriesView: React.FC = () => {
 
   const toggleFavorite = async (problemId: number, event: React.MouseEvent) => {
     event.stopPropagation();
-
     const problem = problemsData.find((p) => p.id === problemId);
     const newFavoriteStatus = !problem?.favorite;
 
-    setProblemsData((prev) =>
-      prev.map((p) => (p.id === problemId ? { ...p, favorite: newFavoriteStatus } : p))
-    );
+    setProblemsData((prev) => prev.map((p) => (p.id === problemId ? { ...p, favorite: newFavoriteStatus } : p)));
 
     if (!user?.id) {
       setError("Changes are not saved. Please log in to save your progress.");
@@ -221,26 +195,20 @@ const CategoriesView: React.FC = () => {
           },
           { onConflict: "user_id,problem_id" }
         );
-
-      if (error) throw new Error(`Favorite upsert failed: ${error.message}, code: ${error.code}`);
+      if (error) throw new Error(`Favorite upsert failed: ${error.message}`);
     } catch (err: any) {
-      console.error("Favorite update error:", err.message || err);
-      setProblemsData((prev) =>
-        prev.map((p) => (p.id === problemId ? { ...p, favorite: !newFavoriteStatus } : p))
-      );
+      console.error("Favorite update error:", err.message);
+      setProblemsData((prev) => prev.map((p) => (p.id === problemId ? { ...p, favorite: !newFavoriteStatus } : p)));
       setError(err.message || "Failed to update favorite status");
     }
   };
 
   const updateLastAttempted = async (problemId: number, event: React.MouseEvent) => {
     event.stopPropagation();
-
     const newLastAttempted = new Date().toISOString();
     const problem = problemsData.find((p) => p.id === problemId);
 
-    setProblemsData((prev) =>
-      prev.map((p) => (p.id === problemId ? { ...p, lastAttempted: newLastAttempted } : p))
-    );
+    setProblemsData((prev) => prev.map((p) => (p.id === problemId ? { ...p, lastAttempted: newLastAttempted } : p)));
 
     if (!user?.id) {
       setError("Changes are not saved. Please log in to save your progress.");
@@ -260,13 +228,10 @@ const CategoriesView: React.FC = () => {
           },
           { onConflict: "user_id,problem_id" }
         );
-
-      if (error) throw new Error(`Last attempted upsert failed: ${error.message}, code: ${error.code}`);
+      if (error) throw new Error(`Last attempted upsert failed: ${error.message}`);
     } catch (err: any) {
-      console.error("Last attempted update error:", err.message || err);
-      setProblemsData((prev) =>
-        prev.map((p) => (p.id === problemId ? { ...p, lastAttempted: undefined } : p))
-      );
+      console.error("Last attempted update error:", err.message);
+      setProblemsData((prev) => prev.map((p) => (p.id === problemId ? { ...p, lastAttempted: undefined } : p)));
       setError(err.message || "Failed to update last attempted");
     }
   };
@@ -275,8 +240,26 @@ const CategoriesView: React.FC = () => {
     window.open(problem.link, "_blank");
   };
 
-  if (sessionLoading) {
-    return <div className="text-white">Loading session...</div>;
+  // Skeleton UI during initial fetch
+  if (isInitialFetch && sessionLoading && !user) {
+    return (
+      <div className="space-y-4">
+        {Array(3).fill(0).map((_, i) => (
+          <div key={i} className="bg-gray-900 rounded-xl p-5 animate-pulse">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center">
+                <div className="w-10 h-10 rounded-lg bg-gray-700 mr-4" />
+                <div>
+                  <div className="h-5 w-32 bg-gray-700 rounded" />
+                  <div className="h-4 w-20 bg-gray-700 rounded mt-2" />
+                </div>
+              </div>
+              <div className="h-5 w-16 bg-gray-700 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -295,30 +278,22 @@ const CategoriesView: React.FC = () => {
             >
               <motion.div
                 className="p-5 flex justify-between items-center cursor-pointer"
-                onClick={() =>
-                  setSelectedCategory(
-                    selectedCategory === category.id ? null : category.id
-                  )
-                }
+                onClick={() => setSelectedCategory(selectedCategory === category.id ? null : category.id)}
               >
                 <div className="flex items-center">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center mr-4">
-                    <span className="text-lg font-bold">
-                      {category.name.charAt(0)}
-                    </span>
+                    <span className="text-lg font-bold">{category.name.charAt(0)}</span>
                   </div>
                   <div>
                     <h3 className="text-lg font-medium">{category.name}</h3>
                     <p className="text-sm text-gray-400">
-                      {problemsData.filter((p) => p.category === category.id).length}{" "}
-                      problems
+                      {problemsData.filter((p) => p.category === category.id).length} problems
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center">
                   <span className="text-gray-400 mr-3">
-                    {problemsData.filter((p) => p.category === category.id && p.solved).length}{" "}
-                    /{" "}
+                    {problemsData.filter((p) => p.category === category.id && p.solved).length} /{" "}
                     {problemsData.filter((p) => p.category === category.id).length}
                   </span>
                   <ChevronDown
@@ -365,11 +340,7 @@ const CategoriesView: React.FC = () => {
                                 className="hover:bg-gray-800 cursor-pointer group"
                                 custom={index}
                                 initial={{ opacity: 0, y: 10 }}
-                                animate={{
-                                  opacity: 1,
-                                  y: 0,
-                                  transition: { delay: index * 0.02, duration: 0.2 },
-                                }}
+                                animate={{ opacity: 1, y: 0, transition: { delay: index * 0.02, duration: 0.2 } }}
                                 onClick={() => handleProblemClick(problem)}
                                 whileHover={{ backgroundColor: "rgba(31, 41, 55, 0.8)" }}
                               >
