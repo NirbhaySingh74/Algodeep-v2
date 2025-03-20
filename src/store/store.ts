@@ -1,5 +1,5 @@
-// store/store.ts
 import { create } from "zustand";
+import { supabase } from "@/lib/supabase";
 
 interface AppState {
   loading: boolean;
@@ -31,6 +31,7 @@ interface AppState {
   };
   setStats: (stats: { easySolved: number; mediumSolved: number; hardSolved: number }) => void;
   updateStat: (difficulty: "Easy" | "Medium" | "Hard", increment: boolean) => void;
+  fetchStats: (userId: string) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -72,4 +73,23 @@ export const useAppStore = create<AppState>((set) => ({
         },
       };
     }),
+  fetchStats: async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("easy_solved, medium_solved, hard_solved")
+        .eq("id", userId)
+        .single();
+      if (error) throw error;
+      set({
+        stats: {
+          easySolved: data.easy_solved || 0,
+          mediumSolved: data.medium_solved || 0,
+          hardSolved: data.hard_solved || 0,
+        },
+      });
+    } catch (err) {
+      console.error("Error fetching stats:", err);
+    }
+  },
 }));

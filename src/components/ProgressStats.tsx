@@ -1,4 +1,3 @@
-// components/ProgressStats.tsx
 "use client";
 
 import React, { useEffect } from "react";
@@ -10,40 +9,16 @@ import { supabase } from "@/lib/supabase";
 
 const ProgressStats: React.FC = () => {
   const { stats, setStats } = useAppStore();
-  const { user } = useNavbar();
+  const { user, isLoading: sessionLoading } = useNavbar();
 
   const totalProblems = problems.length;
-  const solvedProblems = stats.easySolved + stats.mediumSolved + stats.hardSolved; // Derive total dynamically
+  const solvedProblems =
+    stats.easySolved + stats.mediumSolved + stats.hardSolved;
 
   useEffect(() => {
-    const fetchStats = async () => {
-      if (!user?.id) {
-        setStats({ easySolved: 0, mediumSolved: 0, hardSolved: 0 });
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("easy_solved, medium_solved, hard_solved")
-          .eq("id", user.id)
-          .single();
-
-        if (error) throw error;
-
-        setStats({
-          easySolved: data?.easy_solved || 0,
-          mediumSolved: data?.medium_solved || 0,
-          hardSolved: data?.hard_solved || 0,
-        });
-      } catch (err) {
-        console.error("Error fetching stats:", err);
-      }
-    };
-
-    fetchStats();
-
     if (user?.id) {
+      useAppStore.getState().fetchStats(user.id);
+
       const channel = supabase
         .channel("profiles_changes")
         .on(
@@ -67,8 +42,14 @@ const ProgressStats: React.FC = () => {
       return () => {
         supabase.removeChannel(channel);
       };
+    } else {
+      setStats({ easySolved: 0, mediumSolved: 0, hardSolved: 0 });
     }
   }, [user, setStats]);
+
+  if (!user || sessionLoading) {
+    return <div className="text-gray-400">Loading progress...</div>;
+  }
 
   return (
     <motion.div className="mb-8">
@@ -81,7 +62,10 @@ const ProgressStats: React.FC = () => {
             <span className="font-bold text-2xl bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
               {solvedProblems}
             </span>
-            <span className="text-gray-400"> / {totalProblems} problems solved</span>
+            <span className="text-gray-400">
+              {" "}
+              / {totalProblems} problems solved
+            </span>
           </div>
         </div>
         <div className="w-full bg-gray-800 rounded-full h-3">

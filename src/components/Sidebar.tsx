@@ -4,14 +4,7 @@ import React, { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import {
-  Code2,
-  LayoutGrid,
-  Building2,
-  User,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Code2, LayoutGrid, Building2, User, ChevronDown, ChevronUp } from "lucide-react";
 import { useAppStore } from "@/store/store";
 import { problems } from "@/data/problems";
 import { useNavbar } from "@/lib/useNavbar";
@@ -39,55 +32,25 @@ const Sidebar: React.FC = () => {
   const totalHard = problems.filter((p) => p.difficulty === "Hard").length;
 
   useEffect(() => {
-    const fetchStats = async () => {
-      if (!user?.id) {
-        setStats({ easySolved: 0, mediumSolved: 0, hardSolved: 0 });
-        return;
-      }
-
-      try {
-        // Fetch solved problems from user_problems where solved = true
-        const { data: userProblems, error: userProblemsError } = await supabase
-          .from("user_problems")
-          .select("problem_id")
-          .eq("user_id", user.id)
-          .eq("solved", true); // Only count explicitly solved problems
-
-        if (userProblemsError) throw new Error(`Failed to fetch user problems: ${userProblemsError.message}`);
-
-        const solvedProblemIds = new Set(userProblems.map((up: any) => up.problem_id));
-        const solvedProblems = problems.filter((p) => solvedProblemIds.has(p.id.toString()));
-
-        const easySolved = solvedProblems.filter((p) => p.difficulty === "Easy").length;
-        const mediumSolved = solvedProblems.filter((p) => p.difficulty === "Medium").length;
-        const hardSolved = solvedProblems.filter((p) => p.difficulty === "Hard").length;
-
-        setStats({
-          easySolved,
-          mediumSolved,
-          hardSolved,
-        });
-      } catch (err) {
-        console.error("Error fetching stats:", err);
-        setStats({ easySolved: 0, mediumSolved: 0, hardSolved: 0 });
-      }
-    };
-
-    fetchStats();
-
     if (user?.id) {
+      useAppStore.getState().fetchStats(user.id);
+
       const channel = supabase
-        .channel("user_problems_changes")
+        .channel("profiles_changes")
         .on(
           "postgres_changes",
           {
-            event: "*",
+            event: "UPDATE",
             schema: "public",
-            table: "user_problems",
-            filter: `user_id=eq.${user.id}`,
+            table: "profiles",
+            filter: `id=eq.${user.id}`,
           },
-          async () => {
-            await fetchStats();
+          (payload) => {
+            setStats({
+              easySolved: payload.new.easy_solved || 0,
+              mediumSolved: payload.new.medium_solved || 0,
+              hardSolved: payload.new.hard_solved || 0,
+            });
           }
         )
         .subscribe();
@@ -95,6 +58,8 @@ const Sidebar: React.FC = () => {
       return () => {
         supabase.removeChannel(channel);
       };
+    } else {
+      setStats({ easySolved: 0, mediumSolved: 0, hardSolved: 0 });
     }
   }, [user, setStats]);
 
@@ -103,7 +68,9 @@ const Sidebar: React.FC = () => {
     ? pathname === "/practice/companies" || pathname.startsWith("/practice/companies/")
     : false;
 
-  console.log("user", user);
+  if (sessionLoading) {
+    return <div className="p-4 text-gray-400">Loading stats...</div>;
+  }
 
   return (
     <motion.div

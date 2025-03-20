@@ -1,4 +1,3 @@
-// CategoriesView.tsx
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/store/store";
@@ -97,69 +96,40 @@ const CategoriesView: React.FC = () => {
       const difficultyField =
         problem.difficulty === "Easy" ? "easy_solved" : problem.difficulty === "Medium" ? "medium_solved" : "hard_solved";
 
-      if (solved) {
-        const { error: upsertError } = await supabase
-          .from("user_problems")
-          .upsert(
-            {
-              user_id: user.id,
-              problem_id: problemId.toString(),
-              favorite: problem.favorite || false,
-              last_attempted: problem.lastAttempted || null,
-              solved_at: new Date().toISOString(),
-            },
-            { onConflict: "user_id,problem_id" }
-          );
-        if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}`);
-      } else {
-        const { data: existing, error: fetchError } = await supabase
-          .from("user_problems")
-          .select("favorite, last_attempted")
-          .eq("user_id", user.id)
-          .eq("problem_id", problemId.toString())
-          .single();
+      // Upsert user_problems
+      const { error: upsertError } = await supabase
+        .from("user_problems")
+        .upsert(
+          {
+            user_id: user.id,
+            problem_id: problemId.toString(),
+            favorite: problem.favorite || false,
+            last_attempted: problem.lastAttempted || null,
+            solved_at: solved ? new Date().toISOString() : null,
+          },
+          { onConflict: "user_id,problem_id" }
+        );
+      if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}`);
 
-        if (fetchError && fetchError.code !== "PGRST116") throw new Error(`Fetch existing failed: ${fetchError.message}`);
-
-        if (existing && (existing.favorite || existing.last_attempted)) {
-          const { error: updateError } = await supabase
-            .from("user_problems")
-            .update({
-              favorite: existing.favorite,
-              last_attempted: existing.last_attempted,
-              solved_at: null,
-            })
-            .eq("user_id", user.id)
-            .eq("problem_id", problemId.toString());
-          if (updateError) throw new Error(`Update failed: ${updateError.message}`);
-        } else {
-          const { error: deleteError } = await supabase
-            .from("user_problems")
-            .delete()
-            .eq("user_id", user.id)
-            .eq("problem_id", problemId.toString());
-          if (deleteError) throw new Error(`Delete failed: ${deleteError.message}`);
-        }
-      }
-
+      // Fetch current profile stats
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select(difficultyField)
         .eq("id", user.id)
         .single();
-
       if (profileError) throw new Error(`Profile fetch failed: ${profileError.message}`);
 
       const currentCount = profileData?.[difficultyField] || 0;
       const newCount = solved ? currentCount + 1 : Math.max(currentCount - 1, 0);
 
+      // Update profile stats
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ [difficultyField]: newCount })
         .eq("id", user.id);
-
       if (updateError) throw new Error(`Profile update failed: ${updateError.message}`);
 
+      // Update Zustand store
       updateStat(problem.difficulty as "Easy" | "Medium" | "Hard", solved);
     } catch (err: any) {
       console.error("Update error:", err.message);
@@ -240,7 +210,6 @@ const CategoriesView: React.FC = () => {
     window.open(problem.link, "_blank");
   };
 
-  // Skeleton UI during initial fetch
   if (isInitialFetch && sessionLoading && !user) {
     return (
       <div className="space-y-4">

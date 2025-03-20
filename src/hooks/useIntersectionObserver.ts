@@ -1,4 +1,3 @@
-// src/hooks/useIntersectionObserver.ts
 import { useState, useEffect } from "react";
 
 export function useIntersectionObserver(
@@ -10,9 +9,17 @@ export function useIntersectionObserver(
   useEffect(() => {
     const node = elementRef?.current;
     if (!node || typeof IntersectionObserver !== "function") return;
-    const observer = new IntersectionObserver(([entry]) => setEntry(entry), { threshold, root, rootMargin });
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setEntry(entry),
+      { threshold, root, rootMargin }
+    );
+
     observer.observe(node);
-    return () => observer.disconnect();
+
+    return () => {
+      observer.disconnect();
+    };
   }, [elementRef, threshold, root, rootMargin]);
 
   return entry?.isIntersecting;
