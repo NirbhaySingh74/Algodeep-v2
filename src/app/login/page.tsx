@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Code2, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
 import { useAuthStore } from "@/lib/authStore";
 
@@ -29,6 +29,7 @@ function App() {
     checkSession,
   } = useAuthStore();
 
+  // Check session on mount and redirect if authenticated
   useEffect(() => {
     const redirectIfAuthenticated = async () => {
       const isAuthenticated = await checkSession();
@@ -73,13 +74,17 @@ function App() {
 
   return (
     <div>
+      {/* <Navbar /> */}
       <div className="min-h-screen flex flex-col">
         <div className="flex-grow bg-[#1e1e2e] flex items-center justify-center p-4 bg-gradient-to-br from-[#1e1e2e] to-[#2d2d42] overflow-hidden">
           <div className="w-full max-w-md relative mx-auto">
+            {/* Decorative elements */}
             <div className="absolute -top-16 -left-16 w-32 h-32 bg-[#6c5ce7]/10 rounded-full blur-xl"></div>
             <div className="absolute -bottom-20 -right-16 w-40 h-40 bg-[#a29bfe]/10 rounded-full blur-xl"></div>
 
+            {/* Card with glass effect */}
             <div className="backdrop-blur-md bg-[#1e1e2e]/70 border border-[#3d3d5c]/50 rounded-2xl shadow-2xl overflow-hidden">
+              {/* Logo and Title */}
               <div className="text-center pt-8 pb-6 px-4 sm:px-6">
                 <div className="flex justify-center mb-4 relative">
                   <div className="absolute -z-10 w-20 h-20 bg-[#a29bfe]/20 rounded-full blur-md"></div>
@@ -89,15 +94,16 @@ function App() {
                   Welcome to AlgoGrid
                 </h1>
                 <p className="text-gray-400 text-sm sm:text-base">
-                  {authView === "sign_in"
-                    ? "Sign in"
-                    : authView === "sign_up"
-                    ? "Sign up"
-                    : "Reset password"}{" "}
-                  to continue your coding journey
+                  {authView === "sign_in" 
+                    ? "Sign in" 
+                    : authView === "sign_up" 
+                      ? "Sign up" 
+                      : "Reset password"} to continue
+                  your coding journey
                 </p>
               </div>
 
+              {/* Auth Toggle - Only show for sign in/up */}
               {authView !== "forgot_password" && (
                 <div className="px-4 sm:px-6">
                   <div className="bg-[#282838] rounded-xl p-1 grid grid-cols-2 gap-1 mb-6">
@@ -127,6 +133,7 @@ function App() {
                 </div>
               )}
 
+              {/* Back button for forgot password */}
               {authView === "forgot_password" && (
                 <div className="px-4 sm:px-6">
                   <button
@@ -140,8 +147,13 @@ function App() {
                 </div>
               )}
 
+              {/* Auth Form */}
               <div className="p-4 sm:p-6 pt-2">
-                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+                <form
+                  onSubmit={handleSubmit}
+                  className="space-y-4 sm:space-y-5"
+                >
+                  {/* Form Fields */}
                   {authView === "sign_up" && (
                     <div className="space-y-2">
                       <label
@@ -296,18 +308,20 @@ function App() {
                       </>
                     ) : (
                       <>
-                        {authView === "sign_in"
-                          ? "Continue with Email"
-                          : authView === "sign_up"
-                          ? "Create Account"
-                          : "Send Reset Link"}
+                        {authView === "sign_in" 
+                          ? "Continue with Email" 
+                          : authView === "sign_up" 
+                            ? "Create Account" 
+                            : "Send Reset Link"}
                       </>
                     )}
                   </button>
 
                   {error && (
                     <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-4">
-                      <p className="text-red-400 text-sm text-center">{error}</p>
+                      <p className="text-red-400 text-sm text-center">
+                        {error}
+                      </p>
                     </div>
                   )}
 

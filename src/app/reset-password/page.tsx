@@ -86,8 +86,8 @@ function ResetPassword() {
 
       setTimeout(() => {
         if (session) {
-          console.log("Redirecting to /practice");
-          router.push("/practice");
+          console.log("Redirecting to /practice/categories");
+          router.push("/practice/categories");
         } else {
           console.log("Redirecting to /login");
           router.push("/login");
