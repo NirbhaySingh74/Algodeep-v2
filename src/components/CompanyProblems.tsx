@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Company } from "@/data/companies";
 import { useAppStore } from "@/store/store";
 import FilterSection from "./FilterSection";
@@ -52,9 +52,14 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
     const loadMoreRef = useRef<HTMLDivElement>(null);
     const isInView = useIntersectionObserver(loadMoreRef, { threshold: 0.1 });
 
+    // Reset itemsPerPage when company changes
+    useEffect(() => {
+      setItemsPerPage(15); // Reset to initial value when company changes
+    }, [company]);
+
     // Define filteredProblems first
     const filteredProblems = useMemo(() => {
-      let filtered = problems.filter((problem) => {
+      const filtered = problems.filter((problem) => {
         if (difficultyFilter.length > 0 && !difficultyFilter.includes(problem.Difficulty)) return false;
         if (searchQuery) {
           const query = searchQuery.toLowerCase();
@@ -86,29 +91,14 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
     // Paginated problems
     const paginatedProblems = useMemo(() => filteredProblems.slice(0, itemsPerPage), [filteredProblems, itemsPerPage]);
 
-    // Debug logs
-    useEffect(() => {
-      console.log("isInView:", isInView);
-      console.log("itemsPerPage:", itemsPerPage);
-      console.log("problems length:", problems.length);
-      console.log("filteredProblems length:", filteredProblems.length);
-      console.log("paginatedProblems length:", paginatedProblems.length);
-    }, [isInView, itemsPerPage, problems.length, filteredProblems.length, paginatedProblems.length]);
-
-    // Load more items when in view
+    // Load more items when in view with increased delay
     useEffect(() => {
       if (isInView && !loading && !isLoadingMore && filteredProblems.length > itemsPerPage) {
-        console.log("Triggering load more...");
         setIsLoadingMore(true);
-        // Simulate a slight delay to show loading state
         setTimeout(() => {
-          setItemsPerPage((prev) => {
-            const newValue = Math.min(prev + 10, filteredProblems.length);
-            console.log("New itemsPerPage:", newValue);
-            return newValue;
-          });
+          setItemsPerPage((prev) => Math.min(prev + 10, filteredProblems.length));
           setIsLoadingMore(false);
-        }, 500); // Adjust delay as needed
+        }, 1500); // Increased delay to 1.5 seconds
       }
     }, [isInView, loading, filteredProblems.length, itemsPerPage, isLoadingMore]);
 
@@ -135,13 +125,13 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
       setSortConfig({ key, direction });
     };
 
-    // Manual load more for debugging
+    // Manual load more
     const handleLoadMore = () => {
       setIsLoadingMore(true);
       setTimeout(() => {
         setItemsPerPage((prev) => Math.min(prev + 10, filteredProblems.length));
         setIsLoadingMore(false);
-      }, 500);
+      }, 1500); // Match delay with scroll for consistency
     };
 
     return (
@@ -178,7 +168,7 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-16" onClick={() => requestSort("solved")}>
                   Status
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider" onClick={() => requestSort("Title")}>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider" onClick={() => requestSort("'Title")}>
                   Title
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-28" onClick={() => requestSort("Difficulty")}>

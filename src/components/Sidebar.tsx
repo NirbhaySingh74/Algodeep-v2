@@ -4,12 +4,12 @@ import React, { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Code2, LayoutGrid, Building2, User, ChevronDown, ChevronUp } from "lucide-react";
+import { Code2, LayoutGrid, Building2, User, ChevronDown, ChevronUp, LogIn } from "lucide-react";
 import { useAppStore } from "@/store/store";
 import { problems } from "@/data/problems";
 import { useNavbar } from "@/lib/useNavbar";
 import { supabase } from "@/lib/supabase";
-
+// import Link from "next/link";
 const sidebarVariants = {
   expanded: { width: "280px" },
   collapsed: { width: "80px" },
@@ -206,17 +206,28 @@ const Sidebar: React.FC = () => {
         )}
       </div>
 
-      {/* User Profile Section */}
-      <div className="p-4 border-t border-gray-800 flex items-center">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
-          <User className="h-4 w-4 text-white" />
-        </div>
-        {!sidebarCollapsed && (
-          <motion.span className="ml-2 text-gray-200">
-            {user?.full_name ? user.full_name : "Login"}
-          </motion.span>
-        )}
+     {/* User Profile Section */}
+    <div className="p-4 border-t border-gray-800 flex items-center">
+      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+        <User className="h-4 w-4 text-white" />
       </div>
+      {!sidebarCollapsed && (
+        <motion.span className="ml-2 text-gray-200">
+          {user?.full_name ? (
+            user.full_name // Display user's full name if logged in
+          ) : (
+            <Link
+                    href="/login"
+                    className="flex items-center py-2 text-[#a0a0b0] hover:text-white"
+                   
+                  >
+                    <LogIn className="h-5 w-5 mr-2" />
+                    <span>Login / Sign Up</span>
+                  </Link>
+          )}
+        </motion.span>
+      )}
+    </div>
     </motion.div>
   );
 };

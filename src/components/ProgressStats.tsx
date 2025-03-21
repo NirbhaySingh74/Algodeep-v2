@@ -47,9 +47,9 @@ const ProgressStats: React.FC = () => {
     }
   }, [user, setStats]);
 
-  if (!user || sessionLoading) {
-    return <div className="text-gray-400">Loading progress...</div>;
-  }
+  // if (!user || sessionLoading) {
+  //   return <div className="text-gray-400">Loading progress...</div>;
+  // }
 
   return (
     <motion.div className="mb-8">

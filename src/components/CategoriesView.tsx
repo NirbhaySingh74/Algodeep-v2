@@ -34,17 +34,27 @@ const CategoriesView: React.FC = () => {
   const [isInitialFetch, setIsInitialFetch] = React.useState(true);
 
   React.useEffect(() => {
+    console.log("useEffect triggered: ", { user: !!user, sessionLoading, isInitialFetch });
     if (user?.id) {
       fetchUserProblems();
     } else {
-      setProblemsData(problems.map((p) => ({
-        ...p,
-        solved: false,
-        favorite: false,
-        lastAttempted: undefined,
-        solved_at: null,
-      })));
+      console.log("No user, resetting state...");
+      setProblemsData(
+        problems.map((p) => ({
+          ...p,
+          solved: false,
+          favorite: false,
+          lastAttempted: undefined,
+          solved_at: null,
+        }))
+      );
       setIsInitialFetch(false);
+      // Fallback timeout to ensure loading exits if sessionLoading is stuck
+      const timeout = setTimeout(() => {
+        console.log("Timeout triggered, forcing isInitialFetch to false");
+        setIsInitialFetch(false);
+      }, 2000); // 2-second fallback
+      return () => clearTimeout(timeout);
     }
   }, [user]);
 
@@ -64,13 +74,15 @@ const CategoriesView: React.FC = () => {
       const lastAttemptedMap = new Map(data?.map((up: any) => [up.problem_id, up.last_attempted]));
       const solvedAtMap = new Map(data?.map((up: any) => [up.problem_id, up.solved_at]));
 
-      setProblemsData(problems.map((problem) => ({
-        ...problem,
-        solved: solvedProblemIds.has(problem.id.toString()),
-        favorite: favoriteProblemIds.has(problem.id.toString()),
-        lastAttempted: lastAttemptedMap.get(problem.id.toString()),
-        solved_at: solvedAtMap.get(problem.id.toString()),
-      })));
+      setProblemsData(
+        problems.map((problem) => ({
+          ...problem,
+          solved: solvedProblemIds.has(problem.id.toString()),
+          favorite: favoriteProblemIds.has(problem.id.toString()),
+          lastAttempted: lastAttemptedMap.get(problem.id.toString()),
+          solved_at: solvedAtMap.get(problem.id.toString()),
+        }))
+      );
     } catch (err: any) {
       console.error("Fetch error:", err.message);
       setError("Failed to fetch user problems");
@@ -96,7 +108,6 @@ const CategoriesView: React.FC = () => {
       const difficultyField =
         problem.difficulty === "Easy" ? "easy_solved" : problem.difficulty === "Medium" ? "medium_solved" : "hard_solved";
 
-      // Upsert user_problems
       const { error: upsertError } = await supabase
         .from("user_problems")
         .upsert(
@@ -111,7 +122,6 @@ const CategoriesView: React.FC = () => {
         );
       if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}`);
 
-      // Fetch current profile stats
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select(difficultyField)
@@ -122,14 +132,12 @@ const CategoriesView: React.FC = () => {
       const currentCount = profileData?.[difficultyField] || 0;
       const newCount = solved ? currentCount + 1 : Math.max(currentCount - 1, 0);
 
-      // Update profile stats
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ [difficultyField]: newCount })
         .eq("id", user.id);
       if (updateError) throw new Error(`Profile update failed: ${updateError.message}`);
 
-      // Update Zustand store
       updateStat(problem.difficulty as "Easy" | "Medium" | "Hard", solved);
     } catch (err: any) {
       console.error("Update error:", err.message);
@@ -210,7 +218,11 @@ const CategoriesView: React.FC = () => {
     window.open(problem.link, "_blank");
   };
 
-  if (isInitialFetch && sessionLoading && !user) {
+  // Debug loading state
+  console.log("Render: ", { user: !!user, sessionLoading, isInitialFetch });
+
+  // Adjusted loading condition with timeout fallback
+  if (isInitialFetch && (!user && sessionLoading)) {
     return (
       <div className="space-y-4">
         {Array(3).fill(0).map((_, i) => (
