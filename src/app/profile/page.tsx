@@ -268,6 +268,8 @@ export default function Profile() {
                   alt="User Avatar"
                   className="h-32 w-32 rounded-full border-4 border-[#6c5ce7] object-cover shadow-lg"
                 />
+                
+                   
                 <motion.div
                   className="absolute bottom-0 right-0 flex space-x-2"
                   whileHover={{ scale: 1.1 }}

@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import axios from "axios";
 import Papa from "papaparse";
 
-export async function GET(request: Request, { params }: { params: { company: string } }) {
-  const { company } = await params;
+export async function GET(request: NextRequest, { params }: { params: { company: string } }) {
+  const { company } = params;
 
   if (!company) {
     return NextResponse.json({ error: "Invalid or missing company parameter" }, { status: 400 });
@@ -17,17 +17,17 @@ export async function GET(request: Request, { params }: { params: { company: str
     );
     const csvData: string = response.data;
 
-    // Wrap Papa.parse in a Promise to await its completion
-    const parsedData = await new Promise<any[]>((resolve, reject) => {
-      Papa.parse(csvData, {
+    // Parse CSV and return only valid rows
+    const parsedData = await new Promise<Record<string, string>[]>((resolve, reject) => {
+      Papa.parse<Record<string, string>>(csvData, {
         header: true,
         complete: (results) => {
           const filteredResults = results.data
-            .filter((row: any) => row.ID && row.ID.trim() !== "")
+            .filter((row) => row.ID && row.ID.trim() !== "")
             .slice(0, 200); // Limit to 200 results
           resolve(filteredResults);
         },
-        error: (error: Error) => reject(error),
+        error: (error) => reject(error),
       });
     });
 
@@ -35,7 +35,7 @@ export async function GET(request: Request, { params }: { params: { company: str
   } catch (error) {
     console.error("Error fetching or parsing CSV data:", error);
     return NextResponse.json(
-      { error: "Error fetching or parsing CSV data", details: (error as Error).message },
+      { error: "Error fetching or parsing CSV data", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/store/store";
 import { supabase } from "@/lib/supabase";
 import { ChevronDown, ExternalLink, Star, CheckCircle, Clock } from "lucide-react";
-import { categories, problems, Problem, Category } from "@/data/problems";
+import { categories, problems, Problem } from "@/data/problems";
 import { useNavbar } from "@/lib/useNavbar";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 

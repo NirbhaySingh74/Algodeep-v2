@@ -1,7 +1,7 @@
 // app/practice/companies/page.tsx
 "use client";
 import Sidebar from "@/components/Sidebar";
-import SearchAndFilters from "@/components/SearchAndFilters";
+// import SearchAndFilters from "@/components/SearchAndFilters";
 import CompaniesView from "@/components/CompaniesView";
 import { useAppStore } from "@/store/store";
 import { motion } from "framer-motion";
@@ -16,7 +16,6 @@ const contentVariants = {
 export default function CompaniesPage() {
   const {
     selectedCompany,
-    companyProblems,
     setCompanyProblems,
     sidebarCollapsed,
     setLoading,
