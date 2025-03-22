@@ -1,7 +1,6 @@
 "use client";
 
 import Sidebar from "@/components/Sidebar";
-import SearchAndFilters from "@/components/SearchAndFilters";
 import CompaniesView from "@/components/CompaniesView";
 import { useAppStore } from "@/store/store";
 import { motion } from "framer-motion";
