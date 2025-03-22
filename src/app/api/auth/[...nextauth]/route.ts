@@ -1,10 +1,8 @@
-// src/app/api/auth/[...nextauth]/route.ts
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { supabase } from "@/lib/supabase";
-// import { NextRequest, NextResponse } from "next/server";
 
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -36,8 +34,15 @@ export const authOptions: NextAuthOptions = {
           console.error("Profile fetch error:", profileError);
         }
 
-        const fullName = profile?.full_name || data.user.email?.split("@")[0] || "User";
-        const avatarUrl = profile?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=256&background=4f46e5&color=fff`;
+        const fullName =
+          profile?.full_name ||
+          data.user.email?.split("@")[0] ||
+          "User";
+        const avatarUrl =
+          profile?.avatar_url ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            fullName
+          )}&size=256&background=4f46e5&color=fff`;
 
         return {
           id: data.user.id,
@@ -80,8 +85,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-// Create the NextAuth handler
+// ✅ Correct default export for App Router API routes
 const handler = NextAuth(authOptions);
-
-// Export named HTTP methods
 export { handler as GET, handler as POST };
+export default handler;
