@@ -1,9 +1,15 @@
+// src/app/api/companies/[company]/route.ts
 import { NextResponse, NextRequest } from "next/server";
 import axios from "axios";
 import Papa from "papaparse";
 
-export async function GET(request: NextRequest, { params }: { params: { company: string } }) {
-  const { company } = params;
+// Define the params interface explicitly
+interface Params {
+  company: string;
+}
+
+export async function GET(request: NextRequest, context: { params: Params }) {
+  const { company } = context.params;
 
   if (!company) {
     return NextResponse.json({ error: "Invalid or missing company parameter" }, { status: 400 });
