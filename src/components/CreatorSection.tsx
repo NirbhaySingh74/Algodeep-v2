@@ -111,7 +111,7 @@ export default function CreatorSection() {
               </motion.div>
 
               <h3 className="text-2xl font-bold mb-2 text-white text-center">
-                Your Name
+                Nirbhay Singh
               </h3>
               <p className="text-[#6c5ce7] font-medium mb-6 text-center">
                 Full Stack Developer
@@ -364,13 +364,13 @@ export default function CreatorSection() {
                           </div>
                           <div>
                             <h4 className="text-white font-medium group-hover:text-[#6c5ce7] transition-colors">Email</h4>
-                            <p className="text-[#a0a0b0] text-sm">your.email@example.com</p>
+                            <p className="text-[#a0a0b0] text-sm">nkumarwork7@gmail.com</p>
                           </div>
                         </div>
                       </motion.a>
                       
                       <motion.a
-                        href="#"
+                        href="https://www.linkedin.com/in/nirbhay-singh-b8a169207/"
                         className="block bg-[#1e1e2e] p-4 rounded-lg border border-[#3d3d5c] hover:border-[#6c5ce7] transition-colors group"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -389,7 +389,7 @@ export default function CreatorSection() {
                       </motion.a>
                       
                       <motion.a
-                        href="#"
+                        href="https://github.com/NirbhaySingh74"
                         className="block bg-[#1e1e2e] p-4 rounded-lg border border-[#3d3d5c] hover:border-[#6c5ce7] transition-colors group"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Code2, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -9,6 +9,8 @@ import { useAuthStore } from "@/lib/authStore";
 
 function App() {
   const router = useRouter();
+  const [showToast, setShowToast] = useState(false);
+  
   const {
     authView,
     loading,
@@ -43,7 +45,11 @@ function App() {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === "SIGNED_IN" && session) {
-          router.push("/practice/categories");
+          setShowToast(true); // Show toast on successful login
+          setTimeout(() => {
+            setShowToast(false); // Hide toast after 3 seconds
+            router.push("/practice/categories");
+          }, 3000);
         } else if (event === "SIGNED_OUT") {
           router.push("/login");
         }
@@ -74,7 +80,20 @@ function App() {
 
   return (
     <div>
-      {/* <Navbar /> */}
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom duration-500">
+          <div className="bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-white/20">
+            <span className="text-2xl animate-bounce">🎉</span>
+            <div>
+              <p className="font-bold text-lg">Welcome Back!</p>
+              <p className="text-sm">Login Successful</p>
+            </div>
+            <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/20 rounded-full animate-ping"></div>
+          </div>
+        </div>
+      )}
+
       <div className="min-h-screen flex flex-col">
         <div className="flex-grow bg-[#1e1e2e] flex items-center justify-center p-4 bg-gradient-to-br from-[#1e1e2e] to-[#2d2d42] overflow-hidden">
           <div className="w-full max-w-md relative mx-auto">

@@ -221,7 +221,7 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
                 onClick={handleLoadMore}
                 disabled={isLoadingMore}
               >
-                Load More (Manual)
+                Load More (Problems)
               </Button>
             </div>
           )}
