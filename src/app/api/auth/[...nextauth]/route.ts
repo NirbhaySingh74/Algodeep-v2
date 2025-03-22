@@ -1,8 +1,9 @@
+// src/app/api/auth/[...nextauth]/route.ts
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { supabase } from "@/lib/supabase";
 
-const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -85,7 +86,6 @@ const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-// ✅ Correct default export for App Router API routes
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
-export default handler;
+// Export the handler directly for GET and POST
+export const GET = NextAuth(authOptions);
+export const POST = NextAuth(authOptions);
