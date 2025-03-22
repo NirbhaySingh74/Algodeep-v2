@@ -8,6 +8,7 @@ import { Code2, Menu, X, BookOpen, Map, Github, LogIn } from "lucide-react";
 import AuthSection from "./AuthSection";
 import NavLinks from "./NavLinks";
 import { useNavbarStore } from "@/store/useNavbarStore";
+import Image from "next/image";
 
 const Navbar = () => {
   const { user, isLoading } = useNavbar();
@@ -108,7 +109,7 @@ const Navbar = () => {
             <div className="px-4 pt-2 pb-4 space-y-4">
               <Link
                 href="/practice/categories"
-                className={`block py-2 ${isActive("/practice")}`}
+                className={`block py-2 ${isActive("/practice/categories")}`}
                 onClick={() => setIsOpen(false)}
               >
                 <div className="flex items-center">
@@ -144,7 +145,7 @@ const Navbar = () => {
                     className="flex items-center py-2"
                     onClick={() => setIsOpen(false)}
                   >
-                    <img
+                    <Image
                       src={
                         user.avatar_url ||
                         `https://ui-avatars.com/api/?name=${encodeURIComponent(

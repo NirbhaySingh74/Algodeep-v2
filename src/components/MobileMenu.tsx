@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { BookOpen, Map, Github, LogIn } from "lucide-react";
 import { useNavbarStore } from "@/store/useNavbarStore";
+import Image from "next/image";
 
 interface MobileMenuProps {
   user: any;
@@ -20,7 +21,7 @@ const MobileMenu = ({ user }: MobileMenuProps) => {
           className="md:hidden absolute top-16 left-0 w-full bg-[#1e1e2e] border-b border-[#3d3d5c] shadow-lg"
         >
           <div className="flex flex-col items-center space-y-4 py-4">
-            <Link href="/practice" onClick={() => setIsOpen(false)} className="flex items-center text-white">
+            <Link href="/practice/categories" onClick={() => setIsOpen(false)} className="flex items-center text-white">
               <BookOpen className="h-5 w-5 mr-1" />
               <span>Practice</span>
             </Link>
@@ -34,7 +35,7 @@ const MobileMenu = ({ user }: MobileMenuProps) => {
             </a>
             {user ? (
               <Link href="/profile" onClick={() => setIsOpen(false)}>
-                <img
+                <Image
                   src={user.avatar_url || `https://ui-avatars.com/api/?name=User&size=256&background=4f46e5&color=fff`}
                   alt="User Avatar"
                   className="h-10 w-10 rounded-full border-2 border-[#a29bfe] cursor-pointer"

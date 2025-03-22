@@ -8,6 +8,7 @@ import EmptyState from "./EmptyState";
 import { ShimmerRow } from "./ShimmerRow";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 interface Problem {
   ID: number;
@@ -145,7 +146,7 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
         <div className="p-5 border-b border-gray-800">
           <div className="flex items-center">
             <div className="w-14 h-14 rounded-full bg-white p-2 mr-4 flex items-center justify-center shadow-md">
-              <img src={company.logo} alt={company.name} className="w-10 h-10 object-contain" />
+              <Image src={company.logo} alt={company.name} className="w-10 h-10 object-contain" />
             </div>
             <div>
               <h3 className="text-xl font-medium">{company.name} Interview Questions</h3>

@@ -383,7 +383,7 @@ export default function CreatorSection() {
                           </div>
                           <div>
                             <h4 className="text-white font-medium group-hover:text-[#6c5ce7] transition-colors">LinkedIn</h4>
-                            <p className="text-[#a0a0b0] text-sm">Connect with me professionally</p>
+                            <p className="text-[#a0a0b0] text-sm">Connect with me on Linkdin</p>
                           </div>
                         </div>
                       </motion.a>

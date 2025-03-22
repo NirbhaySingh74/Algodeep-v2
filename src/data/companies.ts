@@ -12,6 +12,26 @@ export interface CompanyProblem {
 
 export const companies = [
   {
+    id: "adobe",
+    name: "Adobe",
+    logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTGi3bGlZIlF6Xb68v1zu6gWQCanQIJlIZGj5HDbC7nA7A0-YVcH3sS2pPWr3Is8s3p0qA&usqp=CAU",
+  },
+  {
+    id: "amazon",
+    name: "Amazon",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png",
+  },
+  {
+    id: "apple",
+    name: "Apple",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/488px-Apple_logo_black.svg.png",
+  },
+  {
+    id: "bloomberg",
+    name: "Bloomberg",
+    logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTmITD-lgTwN7sjF4EoXeKMF_1NrLhZBcilag&s",
+  },
+  {
     id: "google",
     name: "Google",
     logo: "https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png",
@@ -22,46 +42,28 @@ export const companies = [
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Meta_Platforms_Inc._logo.svg/512px-Meta_Platforms_Inc._logo.svg.png",
   },
   {
-    id: "amazon",
-    name: "Amazon",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/2560px-Amazon_logo.svg.png",
+    id: "linkedin",
+    name: "LinkedIn",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/640px-LinkedIn_logo_initials.png",
   },
+
   {
     id: "microsoft",
     name: "Microsoft",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Microsoft_logo.svg/512px-Microsoft_logo.svg.png",
   },
-  {
-    id: "apple",
-    name: "Apple",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Apple_logo_black.svg/488px-Apple_logo_black.svg.png",
-  },
-  {
-    id: "adobe",
-    name: "Adobe",
-    logo: "data:image/jpeg;base64,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",
-  },
-  {
-    id: "uber",
-    name: "Uber",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Uber_logo_2018.svg/2560px-Uber_logo_2018.svg.png",
-  },
+
   {
     id: "twitter",
     name: "Twitter",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Logo_of_Twitter.svg/512px-Logo_of_Twitter.svg.png",
   },
+
   {
-    id: "bloomberg",
-    name: "Bloomberg",
-    logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTmITD-lgTwN7sjF4EoXeKMF_1NrLhZBcilag&s",
+    id: "uber",
+    name: "Uber",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Uber_logo_2018.svg/2560px-Uber_logo_2018.svg.png",
   },
-  {
-    id: "linkedin",
-    name: "LinkedIn",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/640px-LinkedIn_logo_initials.png",
-  },
- 
 ];
 
 export const companyProblems: CompanyProblem[] = [
