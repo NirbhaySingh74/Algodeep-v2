@@ -1,9 +1,10 @@
 // src/app/api/auth/[...nextauth]/route.ts
-import NextAuth, { NextAuthOptions } from "next-auth";
+import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { supabase } from "@/lib/supabase";
 
-export const authOptions: NextAuthOptions = {
+// Define the handlers directly
+export const GET = NextAuth({
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -84,8 +85,6 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   secret: process.env.NEXTAUTH_SECRET,
-};
+});
 
-// Export the handler directly for GET and POST
-export const GET = NextAuth(authOptions);
-export const POST = NextAuth(authOptions);
+export const POST = GET;
