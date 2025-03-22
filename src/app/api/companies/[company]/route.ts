@@ -8,11 +8,17 @@ interface Params {
   company: string;
 }
 
-export async function GET(request: NextRequest, context: { params: Params }) {
-  const { company } = context.params;
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Params }
+) {
+  const { company } = params;
 
   if (!company) {
-    return NextResponse.json({ error: "Invalid or missing company parameter" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid or missing company parameter" },
+      { status: 400 }
+    );
   }
 
   console.log("Fetching data for company:", company);
@@ -23,25 +29,29 @@ export async function GET(request: NextRequest, context: { params: Params }) {
     );
     const csvData: string = response.data;
 
-    // Parse CSV and return only valid rows
-    const parsedData = await new Promise<Record<string, string>[]>((resolve, reject) => {
-      Papa.parse<Record<string, string>>(csvData, {
-        header: true,
-        complete: (results) => {
-          const filteredResults = results.data
-            .filter((row) => row.ID && row.ID.trim() !== "")
-            .slice(0, 200); // Limit to 200 results
-          resolve(filteredResults);
-        },
-        error: (error) => reject(error),
-      });
-    });
+    const parsedData = await new Promise<Record<string, string>[]>(
+      (resolve, reject) => {
+        Papa.parse<Record<string, string>>(csvData, {
+          header: true,
+          complete: (results) => {
+            const filteredResults = results.data
+              .filter((row) => row.ID && row.ID.trim() !== "")
+              .slice(0, 200);
+            resolve(filteredResults);
+          },
+          error: (error) => reject(error),
+        });
+      }
+    );
 
     return NextResponse.json(parsedData, { status: 200 });
   } catch (error) {
     console.error("Error fetching or parsing CSV data:", error);
     return NextResponse.json(
-      { error: "Error fetching or parsing CSV data", details: error instanceof Error ? error.message : String(error) },
+      {
+        error: "Error fetching or parsing CSV data",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
