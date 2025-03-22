@@ -37,14 +37,15 @@ export const companies = [
     logo: "https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png",
   },
   {
-    id: "facebook",
-    name: "Meta",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Meta_Platforms_Inc._logo.svg/512px-Meta_Platforms_Inc._logo.svg.png",
-  },
-  {
     id: "linkedin",
     name: "LinkedIn",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/640px-LinkedIn_logo_initials.png",
+  },
+
+  {
+    id: "facebook",
+    name: "Meta",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Meta_Platforms_Inc._logo.svg/512px-Meta_Platforms_Inc._logo.svg.png",
   },
 
   {
