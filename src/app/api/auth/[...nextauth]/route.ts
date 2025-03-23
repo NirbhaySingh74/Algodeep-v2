@@ -60,9 +60,13 @@ export const GET = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.username = user.username;
+        if ("username" in user) {
+          token.username = user.username;
+      }
         token.full_name = user.name;
-        token.avatar_url = user.avatar_url;
+        if ("avatar_url" in user) {
+          token.avatar_url = user.avatar_url;
+        }
       }
       return token;
     },
