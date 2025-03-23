@@ -1,11 +1,26 @@
-"use client"
-import { useRef, useEffect } from "react";
-import { motion, useInView, useAnimation } from "framer-motion";
+"use client";
 
-// Enhanced Feature Card Component
-export const FeatureCard = ({ icon, title, description, iconBgColor, index }) => {
+import { useRef, useEffect, JSX } from "react";
+import { motion, useInView, useAnimation, Variants } from "framer-motion";
+
+// Define props interface for FeatureCard
+interface FeatureCardProps {
+  icon: JSX.Element;
+  title: string;
+  description: string;
+  iconBgColor: string;
+  index: number;
+}
+
+export const FeatureCard: React.FC<FeatureCardProps> = ({ 
+  icon, 
+  title, 
+  description, 
+  iconBgColor, 
+  index 
+}) => {
   const controls = useAnimation();
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   
   useEffect(() => {
@@ -14,22 +29,24 @@ export const FeatureCard = ({ icon, title, description, iconBgColor, index }) =>
     }
   }, [controls, isInView]);
   
+  const cardVariants: Variants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.6,
+        delay: index * 0.1,
+        ease: [0.25, 0.1, 0.25, 1.0]
+      }
+    }
+  };
+
   return (
     <motion.div
       ref={ref}
       className="bg-gradient-to-br from-[#292942] to-[#232338] rounded-xl p-8 h-full border border-[#3d3d5c] hover:border-[#6c5ce7] transition-all duration-300 shadow-lg hover:shadow-[#6c5ce7]/20 relative overflow-hidden group"
-      variants={{
-        hidden: { opacity: 0, y: 50 },
-        visible: { 
-          opacity: 1, 
-          y: 0,
-          transition: { 
-            duration: 0.6,
-            delay: index * 0.1,
-            ease: [0.25, 0.1, 0.25, 1.0]
-          }
-        }
-      }}
+      variants={cardVariants}
       initial="hidden"
       animate={controls}
       whileHover={{ 
@@ -57,5 +74,3 @@ export const FeatureCard = ({ icon, title, description, iconBgColor, index }) =>
     </motion.div>
   );
 };
-
-

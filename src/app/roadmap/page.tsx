@@ -1,5 +1,6 @@
 "use client";
-import { useState, useRef } from "react";
+
+import { useState, useRef, JSX } from "react";
 import { motion } from "framer-motion";
 import { 
   ChevronDown, 
@@ -11,19 +12,36 @@ import {
   MapPin, 
   Star, 
   ArrowRight, 
-  LucideArrowRight,
-  MessageSquare
+  MessageSquare,
+  LucideArrowRight
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 
+// Define interfaces for the roadmap data structure
+interface RoadmapSection {
+  question: string;
+  answer: string;
+}
+
+interface RoadmapStep {
+  id: string;
+  title: string;
+  description: string;
+  icon: JSX.Element;
+  color: string;
+  difficulty: string;
+  timeToMaster: string;
+  sections: RoadmapSection[];
+}
+
 export default function DSARoadmap() {
-  const [expandedSection, setExpandedSection] = useState(null);
-  const containerRef = useRef(null);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   
-  const roadmapSteps = [
+  const roadmapSteps: RoadmapStep[] = [
     {
       id: "basics",
       title: "Foundations",
@@ -58,7 +76,7 @@ export default function DSARoadmap() {
       id: "linkedlists",
       title: "Linked Lists",
       description: "Node and pointer manipulation",
-      icon: <LucideArrowRight className="h-6 w-6" />,
+      icon: <LucideArrowRight className="h-6 w-6" />, // Changed to LucideIcon type
       color: "from-green-500 to-teal-500",
       difficulty: "Intermediate",
       timeToMaster: "2-3 weeks",
@@ -131,8 +149,11 @@ export default function DSARoadmap() {
     }
   ];
 
-  const toggleSection = (id) => setExpandedSection(expandedSection === id ? null : id);
-  const gradientText = (text, gradient) => <span className={`bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{text}</span>;
+  const toggleSection = (id: string) => setExpandedSection(expandedSection === id ? null : id);
+  
+  const gradientText = (text: string, gradient: string): JSX.Element => (
+    <span className={`bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{text}</span>
+  );
 
   return (
     <section ref={containerRef} className="min-h-screen pt-24 pb-16 bg-gradient-to-b from-[#1a1a28] to-[#1e1e2e] overflow-hidden">
@@ -155,9 +176,17 @@ export default function DSARoadmap() {
           <div className="absolute left-1/2 -translate-x-1/2 h-full w-1 bg-gradient-to-b from-indigo-500 to-purple-500 opacity-30"></div>
           <div className="space-y-8">
             {roadmapSteps.map((step, index) => (
-              <motion.div key={step.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 * index }}>
+              <motion.div 
+                key={step.id} 
+                initial={{ opacity: 0, y: 30 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                transition={{ duration: 0.6, delay: 0.1 * index }}
+              >
                 <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                  <motion.div className={`w-10 h-10 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center shadow-md`} whileHover={{ scale: 1.1 }}>
+                  <motion.div 
+                    className={`w-10 h-10 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center shadow-md`} 
+                    whileHover={{ scale: 1.1 }}
+                  >
                     {step.icon}
                   </motion.div>
                 </div>

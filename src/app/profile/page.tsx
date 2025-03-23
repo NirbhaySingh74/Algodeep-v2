@@ -11,16 +11,41 @@ import Link from "next/link";
 import { useAppStore } from "@/store/store";
 import { problems } from "@/data/problems";
 
+// Define types for user and stats
+interface UserProfile {
+  id: string;
+  email?: string;
+  full_name?: string;
+  avatar_url?: string;
+  created_at: string;
+}
+
+interface Stats {
+  easySolved: number;
+  mediumSolved: number;
+  hardSolved: number;
+}
+
+interface Particle {
+  x: number;
+  y: number;
+  size: number;
+  opacity: number;
+  delay: number;
+  duration: number;
+  color: string;
+}
+
 export default function Profile() {
   const { user, isLoading: sessionLoading } = useNavbar();
   const router = useRouter();
   const { stats, fetchStats, setStats } = useAppStore();
-  const [isStatsLoading, setIsStatsLoading] = useState(true);
-  const [particles, setParticles] = useState([]);
+  const [isStatsLoading, setIsStatsLoading] = useState<boolean>(true);
+  const [particles, setParticles] = useState<Particle[]>([]);
 
   // Cursor effect (matching the hero section)
-  const cursorX = useMotionValue(-100);
-  const cursorY = useMotionValue(-100);
+  const cursorX = useMotionValue<number>(-100);
+  const cursorY = useMotionValue<number>(-100);
 
   // Spring physics for smoother cursor movement
   const springConfig = { damping: 25, stiffness: 700 };
@@ -33,7 +58,7 @@ export default function Profile() {
 
   // Mouse movement effects (matching the hero section)
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       cursorX.set(e.clientX);
       cursorY.set(e.clientY);
     };
@@ -47,7 +72,7 @@ export default function Profile() {
     const handleResize = () => {
       if (typeof window !== "undefined") {
         // Create particles
-        const newParticles = [...Array(20)].map(() => ({
+        const newParticles: Particle[] = [...Array(20)].map(() => ({
           x: Math.random() * window.innerWidth,
           y: Math.random() * window.innerHeight * 0.7,
           size: Math.random() * 3 + 1,
@@ -107,7 +132,7 @@ export default function Profile() {
             table: "profiles",
             filter: `id=eq.${user.id}`,
           },
-          (payload) => {
+          (payload: { new: { easy_solved?: number; medium_solved?: number; hard_solved?: number } }) => {
             setStats({
               easySolved: payload.new.easy_solved || 0,
               mediumSolved: payload.new.medium_solved || 0,
@@ -123,7 +148,7 @@ export default function Profile() {
     }
   }, [user, sessionLoading, router, fetchStats, setStats]);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -264,12 +289,11 @@ export default function Profile() {
                 transition={{ type: "spring", stiffness: 300, damping: 15 }}
               >
                 <img
-                  src={user.avatar_url}
+                  src={user.avatar_url || "/default-avatar.png"}
                   alt="User Avatar"
                   className="h-32 w-32 rounded-full border-4 border-[#6c5ce7] object-cover shadow-lg"
                 />
                 
-                   
                 <motion.div
                   className="absolute bottom-0 right-0 flex space-x-2"
                   whileHover={{ scale: 1.1 }}
@@ -287,9 +311,9 @@ export default function Profile() {
 
               <div className="text-center md:text-left flex-1">
                 <h1 className="text-3xl font-bold text-white mb-2">
-                  {user.full_name}
+                  {user.full_name || "Unknown User"}
                 </h1>
-                <p className="text-[#a0a0b0] text-lg">{user.email}</p>
+                <p className="text-[#a0a0b0] text-lg">{user.email || "No email"}</p>
               </div>
             </div>
 

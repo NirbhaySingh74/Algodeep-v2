@@ -7,12 +7,14 @@ import { categories, problems, Problem } from "@/data/problems";
 import { useNavbar } from "@/lib/useNavbar";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
-const difficultyColors = {
+// Define difficulty colors with explicit types
+const difficultyColors: Record<string, { bg: string; text: string }> = {
   Easy: { bg: "bg-green-900", text: "text-green-300" },
   Medium: { bg: "bg-yellow-900", text: "text-yellow-300" },
   Hard: { bg: "bg-red-900", text: "text-red-300" },
 };
 
+// Extend Problem interface with additional properties
 interface ExtendedProblem extends Problem {
   solved: boolean;
   favorite: boolean;
@@ -20,16 +22,34 @@ interface ExtendedProblem extends Problem {
   solved_at?: string | null;
 }
 
+// Define user profile type
+interface UserProfile {
+  easy_solved: number;
+  medium_solved: number;
+  hard_solved: number;
+}
+
+// Define user problem data from Supabase
+interface UserProblem {
+  problem_id: string;
+  last_attempted: string | null;
+  favorite: boolean;
+  solved_at: string | null;
+}
+
 const CategoriesView: React.FC = () => {
   const { viewMode, selectedCategory, setSelectedCategory, updateStat } = useAppStore();
   const { user, isLoading: sessionLoading } = useNavbar();
-  const [problemsData, setProblemsData] = React.useState<ExtendedProblem[]>(problems.map((p) => ({
-    ...p,
-    solved: false,
-    favorite: false,
-    lastAttempted: undefined,
-    solved_at: null,
-  })));
+  
+  const [problemsData, setProblemsData] = React.useState<ExtendedProblem[]>(
+    problems.map((p) => ({
+      ...p,
+      solved: false,
+      favorite: false,
+      lastAttempted: undefined,
+      solved_at: null,
+    }))
+  );
   const [error, setError] = React.useState<string | null>(null);
   const [isInitialFetch, setIsInitialFetch] = React.useState(true);
 
@@ -49,11 +69,10 @@ const CategoriesView: React.FC = () => {
         }))
       );
       setIsInitialFetch(false);
-      // Fallback timeout to ensure loading exits if sessionLoading is stuck
       const timeout = setTimeout(() => {
         console.log("Timeout triggered, forcing isInitialFetch to false");
         setIsInitialFetch(false);
-      }, 2000); // 2-second fallback
+      }, 2000);
       return () => clearTimeout(timeout);
     }
   }, [user]);
@@ -69,22 +88,23 @@ const CategoriesView: React.FC = () => {
 
       if (error) throw new Error(`Fetch failed: ${error.message}`);
 
-      const solvedProblemIds = new Set(data?.filter((up: any) => up.solved_at !== null).map((up: any) => up.problem_id));
-      const favoriteProblemIds = new Set(data?.filter((up: any) => up.favorite).map((up: any) => up.problem_id));
-      const lastAttemptedMap = new Map(data?.map((up: any) => [up.problem_id, up.last_attempted]));
-      const solvedAtMap = new Map(data?.map((up: any) => [up.problem_id, up.solved_at]));
+      const userProblems = data as UserProblem[];
+      const solvedProblemIds = new Set(userProblems.filter(up => up.solved_at !== null).map(up => up.problem_id));
+      const favoriteProblemIds = new Set(userProblems.filter(up => up.favorite).map(up => up.problem_id));
+      const lastAttemptedMap = new Map(userProblems.map(up => [up.problem_id, up.last_attempted]));
+      const solvedAtMap = new Map(userProblems.map(up => [up.problem_id, up.solved_at]));
 
       setProblemsData(
         problems.map((problem) => ({
           ...problem,
           solved: solvedProblemIds.has(problem.id.toString()),
           favorite: favoriteProblemIds.has(problem.id.toString()),
-          lastAttempted: lastAttemptedMap.get(problem.id.toString()),
-          solved_at: solvedAtMap.get(problem.id.toString()),
+          lastAttempted: lastAttemptedMap.get(problem.id.toString()) || undefined,
+          solved_at: solvedAtMap.get(problem.id.toString()) || null,
         }))
       );
-    } catch (err: any) {
-      console.error("Fetch error:", err.message);
+    } catch (err) {
+      console.error("Fetch error:", err instanceof Error ? err.message : String(err));
       setError("Failed to fetch user problems");
     } finally {
       setIsInitialFetch(false);
@@ -93,7 +113,11 @@ const CategoriesView: React.FC = () => {
 
   const updateProblemStatus = async (problemId: number, solved: boolean) => {
     setProblemsData((prev) =>
-      prev.map((p) => (p.id === problemId ? { ...p, solved, solved_at: solved ? new Date().toISOString() : null } : p))
+      prev.map((p) => 
+        p.id === problemId 
+          ? { ...p, solved, solved_at: solved ? new Date().toISOString() : null } 
+          : p
+      )
     );
 
     if (!user?.id) {
@@ -105,8 +129,12 @@ const CategoriesView: React.FC = () => {
       const problem = problemsData.find((p) => p.id === problemId);
       if (!problem) throw new Error(`Problem ${problemId} not found`);
 
-      const difficultyField =
-        problem.difficulty === "Easy" ? "easy_solved" : problem.difficulty === "Medium" ? "medium_solved" : "hard_solved";
+      const difficultyField = 
+        problem.difficulty === "Easy" 
+          ? "easy_solved" 
+          : problem.difficulty === "Medium" 
+            ? "medium_solved" 
+            : "hard_solved";
 
       const { error: upsertError } = await supabase
         .from("user_problems")
@@ -127,9 +155,10 @@ const CategoriesView: React.FC = () => {
         .select(difficultyField)
         .eq("id", user.id)
         .single();
-      if (profileError) throw new Error(`Profile fetch failed: ${profileError.message}`);
 
-      const currentCount = profileData?.[difficultyField] || 0;
+      if (profileError) throw new Error(`Profile fetch failed: ${profileError.message}`);
+      
+      const currentCount = (profileData as Record<string, number>)[difficultyField] || 0;
       const newCount = solved ? currentCount + 1 : Math.max(currentCount - 1, 0);
 
       const { error: updateError } = await supabase
@@ -139,12 +168,16 @@ const CategoriesView: React.FC = () => {
       if (updateError) throw new Error(`Profile update failed: ${updateError.message}`);
 
       updateStat(problem.difficulty as "Easy" | "Medium" | "Hard", solved);
-    } catch (err: any) {
-      console.error("Update error:", err.message);
+    } catch (err) {
+      console.error("Update error:", err instanceof Error ? err.message : String(err));
       setProblemsData((prev) =>
-        prev.map((p) => (p.id === problemId ? { ...p, solved: !solved, solved_at: !solved ? null : p.solved_at } : p))
+        prev.map((p) => 
+          p.id === problemId 
+            ? { ...p, solved: !solved, solved_at: !solved ? null : p.solved_at } 
+            : p
+        )
       );
-      setError(err.message || "Failed to update problem status");
+      setError(err instanceof Error ? err.message : "Failed to update problem status");
     }
   };
 
@@ -153,7 +186,11 @@ const CategoriesView: React.FC = () => {
     const problem = problemsData.find((p) => p.id === problemId);
     const newFavoriteStatus = !problem?.favorite;
 
-    setProblemsData((prev) => prev.map((p) => (p.id === problemId ? { ...p, favorite: newFavoriteStatus } : p)));
+    setProblemsData((prev) => 
+      prev.map((p) => 
+        p.id === problemId ? { ...p, favorite: newFavoriteStatus } : p
+      )
+    );
 
     if (!user?.id) {
       setError("Changes are not saved. Please log in to save your progress.");
@@ -174,10 +211,14 @@ const CategoriesView: React.FC = () => {
           { onConflict: "user_id,problem_id" }
         );
       if (error) throw new Error(`Favorite upsert failed: ${error.message}`);
-    } catch (err: any) {
-      console.error("Favorite update error:", err.message);
-      setProblemsData((prev) => prev.map((p) => (p.id === problemId ? { ...p, favorite: !newFavoriteStatus } : p)));
-      setError(err.message || "Failed to update favorite status");
+    } catch (err) {
+      console.error("Favorite update error:", err instanceof Error ? err.message : String(err));
+      setProblemsData((prev) => 
+        prev.map((p) => 
+          p.id === problemId ? { ...p, favorite: !newFavoriteStatus } : p
+        )
+      );
+      setError(err instanceof Error ? err.message : "Failed to update favorite status");
     }
   };
 
@@ -186,7 +227,11 @@ const CategoriesView: React.FC = () => {
     const newLastAttempted = new Date().toISOString();
     const problem = problemsData.find((p) => p.id === problemId);
 
-    setProblemsData((prev) => prev.map((p) => (p.id === problemId ? { ...p, lastAttempted: newLastAttempted } : p)));
+    setProblemsData((prev) => 
+      prev.map((p) => 
+        p.id === problemId ? { ...p, lastAttempted: newLastAttempted } : p
+      )
+    );
 
     if (!user?.id) {
       setError("Changes are not saved. Please log in to save your progress.");
@@ -207,10 +252,14 @@ const CategoriesView: React.FC = () => {
           { onConflict: "user_id,problem_id" }
         );
       if (error) throw new Error(`Last attempted upsert failed: ${error.message}`);
-    } catch (err: any) {
-      console.error("Last attempted update error:", err.message);
-      setProblemsData((prev) => prev.map((p) => (p.id === problemId ? { ...p, lastAttempted: undefined } : p)));
-      setError(err.message || "Failed to update last attempted");
+    } catch (err) {
+      console.error("Last attempted update error:", err instanceof Error ? err.message : String(err));
+      setProblemsData((prev) => 
+        prev.map((p) => 
+          p.id === problemId ? { ...p, lastAttempted: undefined } : p
+        )
+      );
+      setError(err instanceof Error ? err.message : "Failed to update last attempted");
     }
   };
 
@@ -218,10 +267,8 @@ const CategoriesView: React.FC = () => {
     window.open(problem.link, "_blank");
   };
 
-  // Debug loading state
   console.log("Render: ", { user: !!user, sessionLoading, isInitialFetch });
 
-  // Adjusted loading condition with timeout fallback
   if (isInitialFetch && (!user && sessionLoading)) {
     return (
       <div className="space-y-4">
@@ -243,6 +290,7 @@ const CategoriesView: React.FC = () => {
     );
   }
 
+  
   return (
     <>
       {viewMode === "categories" && (

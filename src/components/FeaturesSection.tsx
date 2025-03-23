@@ -1,21 +1,74 @@
 "use client";
+
 import {
-  Code,
   Building,
   Filter,
   Bookmark,
   Star,
-  LineChart,
   BrainCircuit,
   Folder,
 } from "lucide-react";
-import { useRef } from "react";
+import { JSX, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { FeatureCard } from "./FeatureCard";
 
+// Define interface for feature data
+interface Feature {
+  icon: JSX.Element;
+  title: string;
+  description: string;
+  iconBgColor: string;
+}
+
 export default function FeaturesSection() {
-  const sectionRef = useRef(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, { once: true, amount: 0.1 });
+
+  // Updated Feature Data with explicit typing
+  const features: Feature[] = [
+    {
+      icon: <Folder className="h-7 w-7 text-[#a29bfe]" />,
+      title: "Category-wise Problems",
+      description:
+        "Practice problems organized by patterns and categories like Arrays, Dynamic Programming, Graphs, and more.",
+      iconBgColor: "bg-[#6c5ce7]/20",
+    },
+    {
+      icon: <Building className="h-7 w-7 text-[#a29bfe]" />,
+      title: "Company-wise Collections",
+      description:
+        "Access problem sets frequently asked by top tech companies like Google, Meta, Amazon, and Microsoft.",
+      iconBgColor: "bg-[#6c5ce7]/20",
+    },
+    {
+      icon: <Filter className="h-7 w-7 text-[#a29bfe]" />,
+      title: "Advanced Filtering",
+      description:
+        "Filter problems by difficulty, status, pattern, or search specific problems using keywords.",
+      iconBgColor: "bg-[#6c5ce7]/20",
+    },
+    {
+      icon: <Bookmark className="h-7 w-7 text-[#a29bfe]" />,
+      title: "Mark as Solved",
+      description:
+        "Keep track of your progress by marking problems as solved and visualize your journey through different topics.",
+      iconBgColor: "bg-[#6c5ce7]/20",
+    },
+    {
+      icon: <Star className="h-7 w-7 text-[#a29bfe]" />,
+      title: "Star for Revision",
+      description:
+        "Star important problems you want to revisit later and create your personalized revision list.",
+      iconBgColor: "bg-[#6c5ce7]/20",
+    },
+    {
+      icon: <BrainCircuit className="h-7 w-7 text-[#a29bfe]" />,
+      title: "Solution Approaches",
+      description:
+        "Access multiple solution approaches with detailed explanations and time/space complexity analysis for each problem.",
+      iconBgColor: "bg-[#6c5ce7]/20",
+    },
+  ];
 
   return (
     <section ref={sectionRef} className="py-24 relative overflow-hidden">
@@ -52,56 +105,17 @@ export default function FeaturesSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <FeatureCard key={feature.title} {...feature} index={index} />
+            <FeatureCard 
+              key={feature.title} 
+              icon={feature.icon}
+              title={feature.title}
+              description={feature.description}
+              iconBgColor={feature.iconBgColor}
+              index={index}
+            />
           ))}
         </div>
       </div>
     </section>
   );
 }
-
-// Updated Feature Data for Neetcode-like platform
-const features = [
-  {
-    icon: <Folder className="h-7 w-7 text-[#a29bfe]" />,
-    title: "Category-wise Problems",
-    description:
-      "Practice problems organized by patterns and categories like Arrays, Dynamic Programming, Graphs, and more.",
-    iconBgColor: "bg-[#6c5ce7]/20",
-  },
-  {
-    icon: <Building className="h-7 w-7 text-[#a29bfe]" />,
-    title: "Company-wise Collections",
-    description:
-      "Access problem sets frequently asked by top tech companies like Google, Meta, Amazon, and Microsoft.",
-    iconBgColor: "bg-[#6c5ce7]/20",
-  },
-  {
-    icon: <Filter className="h-7 w-7 text-[#a29bfe]" />,
-    title: "Advanced Filtering",
-    description:
-      "Filter problems by difficulty, status, pattern, or search specific problems using keywords.",
-    iconBgColor: "bg-[#6c5ce7]/20",
-  },
-  {
-    icon: <Bookmark className="h-7 w-7 text-[#a29bfe]" />,
-    title: "Mark as Solved",
-    description:
-      "Keep track of your progress by marking problems as solved and visualize your journey through different topics.",
-    iconBgColor: "bg-[#6c5ce7]/20",
-  },
-  {
-    icon: <Star className="h-7 w-7 text-[#a29bfe]" />,
-    title: "Star for Revision",
-    description:
-      "Star important problems you want to revisit later and create your personalized revision list.",
-    iconBgColor: "bg-[#6c5ce7]/20",
-  },
-  {
-    icon: <BrainCircuit className="h-7 w-7 text-[#a29bfe]" />,
-    title: "Solution Approaches",
-    description:
-      "Access multiple solution approaches with detailed explanations and time/space complexity analysis for each problem.",
-    iconBgColor: "bg-[#6c5ce7]/20",
-  },
-];
