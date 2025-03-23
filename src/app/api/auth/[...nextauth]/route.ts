@@ -1,10 +1,18 @@
 // src/app/api/auth/[...nextauth]/route.ts
-import NextAuth from "next-auth";
+import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { supabase } from "@/lib/supabase";
 
-// Define the handlers directly
-export const GET = NextAuth({
+// Define extended types
+interface ExtendedUser {
+  id: string;
+  email?: string;
+  name?: string;
+  username?: string;
+  avatar_url?: string;
+}
+
+const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -59,23 +67,21 @@ export const GET = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        if ("username" in user) {
-          token.username = user.username;
-      }
-        token.full_name = user.name;
-        if ("avatar_url" in user) {
-          token.avatar_url = user.avatar_url;
-        }
+        const extendedUser = user as ExtendedUser;
+        token.id = extendedUser.id;
+        token.username = extendedUser.username;
+        token.full_name = extendedUser.name;
+        token.avatar_url = extendedUser.avatar_url;
       }
       return token;
     },
     async session({ session, token }) {
-      if (token) {
+      // Ensure session.user exists before assigning properties
+      if (session.user && token) {
         session.user.id = token.id as string;
-        session.user.username = token.username as string;
-        session.user.full_name = token.full_name as string;
-        session.user.avatar_url = token.avatar_url as string;
+        session.user.username = token.username as string | undefined;
+        session.user.full_name = token.full_name as string | undefined;
+        session.user.avatar_url = token.avatar_url as string | undefined;
       }
       return session;
     },
@@ -89,6 +95,7 @@ export const GET = NextAuth({
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
 
-export const POST = GET;
+export const GET = NextAuth(authOptions);
+export const POST = NextAuth(authOptions);
