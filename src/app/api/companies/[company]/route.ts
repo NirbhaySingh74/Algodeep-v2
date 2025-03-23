@@ -39,7 +39,8 @@ export async function GET(
               .slice(0, 200);
             resolve(filteredResults);
           },
-          error: (error) => reject(error),
+          error: (error: Error, file: Papa.LocalFile | string | null) =>
+            reject(error), // Updated signature
         });
       }
     );
