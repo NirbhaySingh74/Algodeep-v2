@@ -1,4 +1,3 @@
-// src/app/api/companies/[company]/route.ts
 import { NextResponse, NextRequest } from "next/server";
 import axios from "axios";
 import Papa from "papaparse";
@@ -10,9 +9,9 @@ interface Params {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
-  const { company } = params;
+  const { company } = await params;
 
   if (!company) {
     return NextResponse.json(
@@ -27,6 +26,7 @@ export async function GET(
     const response = await axios.get<string>(
       `https://raw.githubusercontent.com/krishnadey30/LeetCode-Questions-CompanyWise/master/${company}_alltime.csv`
     );
+
     const csvData: string = response.data;
 
     const parsedData = await new Promise<Record<string, string>[]>(
@@ -47,6 +47,7 @@ export async function GET(
     return NextResponse.json(parsedData, { status: 200 });
   } catch (error) {
     console.error("Error fetching or parsing CSV data:", error);
+
     return NextResponse.json(
       {
         error: "Error fetching or parsing CSV data",
