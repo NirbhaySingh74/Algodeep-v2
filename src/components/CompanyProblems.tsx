@@ -170,7 +170,7 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
         <div className="p-5 border-b border-gray-800">
           <div className="flex items-center">
             <div className="w-14 h-14 rounded-full bg-white p-2 mr-4 flex items-center justify-center shadow-md">
-              <Image 
+              <img
                 src={company.logo} 
                 alt={company.name} 
                 width={40}
