@@ -1,31 +1,61 @@
-"use client"
+"use client";
 import { useEffect, useState, useRef } from "react";
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
+import { 
+  motion, 
+  useScroll, 
+  useTransform, 
+  useMotionValue, 
+  useSpring,
+  MotionValue 
+} from "framer-motion";
 import { Zap, Code, ChevronRight, ArrowRight, Briefcase, Lightbulb } from "lucide-react";
 import Link from "next/link";
 
-export default function EnhancedHeroSection() {
+// Interface for particle properties
+interface Particle {
+  x: number;
+  y: number;
+  size: number;
+  opacity: number;
+  delay: number;
+  duration: number;
+  color: string;
+}
+
+// Interface for window dimensions
+interface WindowSize {
+  width: number;
+  height: number;
+}
+
+// Interface for feature highlights
+interface Feature {
+  title: string;
+  description: string;
+}
+
+const EnhancedHeroSection: React.FC = () => {
   // Cursor effect
-  const cursorX = useMotionValue(-100);
-  const cursorY = useMotionValue(-100);
+  const cursorX: MotionValue<number> = useMotionValue(-100);
+  const cursorY: MotionValue<number> = useMotionValue(-100);
   
   // Spring physics for smoother cursor movement
   const springConfig = { damping: 25, stiffness: 700 };
-  const cursorXSpring = useSpring(cursorX, springConfig);
-  const cursorYSpring = useSpring(cursorY, springConfig);
+  const cursorXSpring: MotionValue<number> = useSpring(cursorX, springConfig);
+  const cursorYSpring: MotionValue<number> = useSpring(cursorY, springConfig);
   
   // For parallax scrolling effects
   const { scrollYProgress } = useScroll();
-  const y = useTransform(scrollYProgress, [0, 1], [0, 300]);
+  const y: MotionValue<number> = useTransform(scrollYProgress, [0, 1], [0, 300]);
   
   // Dynamic particles system
-  const [particles, setParticles] = useState([]);
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
-  const heroRef = useRef(null);
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const [windowSize, setWindowSize] = useState<WindowSize>({ width: 0, height: 0 });
+  const heroRef = useRef<HTMLElement>(null);
   
   // Mouse movement effects
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       cursorX.set(e.clientX);
       cursorY.set(e.clientY);
     };
@@ -47,15 +77,19 @@ export default function EnhancedHeroSection() {
       handleResize();
       window.addEventListener("resize", handleResize);
       
-      // Create particles
-      const newParticles = [...Array(40)].map(() => ({
+      // Create particles with type safety
+      const newParticles: Particle[] = Array.from({ length: 40 }, () => ({
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight * 0.7,
         size: Math.random() * 3 + 1,
         opacity: Math.random() * 0.5 + 0.3,
         delay: Math.random() * 5,
         duration: Math.random() * 10 + 10,
-        color: Math.random() > 0.7 ? "#a29bfe" : (Math.random() > 0.5 ? "#6c5ce7" : "#00b894"),
+        color: Math.random() > 0.7 
+          ? "#a29bfe" 
+          : Math.random() > 0.5 
+            ? "#6c5ce7" 
+            : "#00b894",
       }));
       
       setParticles(newParticles);
@@ -67,23 +101,23 @@ export default function EnhancedHeroSection() {
   // Text animation variants
   const letterVariants = {
     hidden: { opacity: 0, y: 50 },
-    visible: (i) => ({
+    visible: (i: number) => ({
       opacity: 1,
       y: 0,
       transition: {
         delay: i * 0.05,
         duration: 0.8,
-        ease: [0.22, 1, 0.36, 1]
+        ease: [0.22, 1, 0.36, 1] as [number, number, number, number]
       }
     })
   };
   
-  const titleWords = ["Master", "DSA", "Patterns"];
+  const titleWords: string[] = ["Master", "DSA", "Patterns"];
 
   return (
     <section 
       ref={heroRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24" // Added padding-top to fix navbar overlap
+      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24"
     >
       {/* Background Elements */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#10101c] via-[#1a1a28] to-[#1e1e2e]"></div>
@@ -158,7 +192,7 @@ export default function EnhancedHeroSection() {
       <div className="relative z-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Badge */}
         <motion.div
-          className="inline-block mb-6 mt-6" // Added margin-top for better spacing
+          className="inline-block mb-6 mt-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -175,7 +209,7 @@ export default function EnhancedHeroSection() {
         <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight">
           {titleWords.map((word, wordIndex) => (
             <span key={wordIndex} className="inline-block mr-4 overflow-hidden">
-              {Array.from(word).map((letter, letterIndex) => (
+              {word.split('').map((letter, letterIndex) => (
                 <motion.span
                   key={letterIndex}
                   className={`inline-block ${
@@ -316,18 +350,18 @@ export default function EnhancedHeroSection() {
           </div>
         </motion.div>
         
-        {/* Feature Highlights - Removed "Comprehensive Solutions" feature */}
+        {/* Feature Highlights */}
         <motion.div
           className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.7 }}
         >
-          {[
+          {([
             { title: "Pattern-Based Learning", description: "Problems organized by algorithm patterns" },
             { title: "Company-Specific Practice", description: "Questions from top tech interviews" },
             { title: "Progress Tracking", description: "Mark completed problems and track progress" }
-          ].map((feature, index) => (
+          ] as Feature[]).map((feature, index) => (
             <div key={index} className="flex items-center p-3 rounded-lg bg-[#2d2d42]/20 backdrop-blur-sm">
               <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#6c5ce7]/20 flex items-center justify-center mr-3">
                 <motion.div 
@@ -365,4 +399,6 @@ export default function EnhancedHeroSection() {
       </div>
     </section>
   );
-}
+};
+
+export default EnhancedHeroSection;
