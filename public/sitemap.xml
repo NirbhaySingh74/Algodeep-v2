@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <!-- Homepage (likely your login/signup page) -->
+    <url>
+        <loc>https://www.algogrid.xyz/</loc>
+        <lastmod>2025-03-24</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+
+    <!-- Login Page (if separate from homepage) -->
+    <url>
+        <loc>https://www.algogrid.xyz/login</loc>
+        <lastmod>2025-03-24</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+
+    <!-- Reset Password Page -->
+    <url>
+        <loc>https://www.algogrid.xyz/reset-password</loc>
+        <lastmod>2025-03-24</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+
+    <!-- Practice Categories (optional, if public) -->
+    <url>
+        <loc>https://www.algogrid.xyz/practice/categories</loc>
+        <lastmod>2025-03-24</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+</urlset>
