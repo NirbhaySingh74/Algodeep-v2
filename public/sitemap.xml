@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    <!-- Homepage (likely your login/signup page) -->
+    <!-- Homepage -->
     <url>
         <loc>https://www.algogrid.xyz/</loc>
         <lastmod>2025-03-24</lastmod>
@@ -8,7 +8,7 @@
         <priority>1.0</priority>
     </url>
 
-    <!-- Login Page (if separate from homepage) -->
+    <!-- Login/Signup Page -->
     <url>
         <loc>https://www.algogrid.xyz/login</loc>
         <lastmod>2025-03-24</lastmod>
@@ -24,11 +24,27 @@
         <priority>0.5</priority>
     </url>
 
-    <!-- Practice Categories (optional, if public) -->
+    <!-- Practice Categories Page -->
     <url>
         <loc>https://www.algogrid.xyz/practice/categories</loc>
         <lastmod>2025-03-24</lastmod>
         <changefreq>weekly</changefreq>
+        <priority>0.9</priority>
+    </url>
+
+    <!-- Practice Companies Page -->
+    <url>
+        <loc>https://www.algogrid.xyz/practice/companies</loc>
+        <lastmod>2025-03-24</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.9</priority>
+    </url>
+
+    <!-- Roadmap Page -->
+    <url>
+        <loc>https://www.algogrid.xyz/roadmap</loc>
+        <lastmod>2025-03-24</lastmod>
+        <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
 </urlset>
