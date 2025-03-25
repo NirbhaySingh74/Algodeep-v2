@@ -202,7 +202,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // If no session is returned, email confirmation is required
       if (!data.session) {
         set({ 
-          successMessage: 'Please check your email to confirm your account',
+          successMessage: 'Check your email to verify your account. If you don’t see it, check spam.',
           loading: false
         });
         setTimeout(() => get().resetForm(), 500);
@@ -254,7 +254,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       
       set({
-        successMessage: 'Password reset link sent! Please check your email.',
+        successMessage: 'Password reset link sent! Please check your email. If you don’t see it, check spam.',
         loading: false
       });
       
