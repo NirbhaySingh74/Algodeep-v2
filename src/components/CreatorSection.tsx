@@ -90,7 +90,7 @@ export default function CreatorSection() {
               >
                 <h4 className="text-white text-lg font-medium mb-3">Portfolio</h4>
                 <motion.a
-                  href="https://portfolio-v2-two-rouge.vercel.app/"
+                  href="https://www.nirbhay.work/"
                   target="_blank"
                   className="flex items-center text-[#a0a0b0] hover:text-[#6c5ce7] transition-colors"
                   whileHover={{ x: 5 }}
