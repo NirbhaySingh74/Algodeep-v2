@@ -2,7 +2,7 @@ import '@/styles/globals.css';
 import { Inter } from 'next/font/google';
 import Navbar from '@/components/Navbar';
 import { Providers } from './providers';
-import Script from 'next/script'; // Import next/script
+import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -28,7 +28,7 @@ export const metadata = {
     type: 'website',
     images: [
       {
-        url: 'favicon.ico', // Replace with a real 1200x630 image
+        url: 'https://www.algogrid.xyz/og-image.jpg', // Replace with your actual Open Graph image
         width: 1200,
         height: 630,
         alt: 'AlgoGrid - Master DSA Patterns',
@@ -41,7 +41,7 @@ export const metadata = {
     description: 'Learn Data Structures and Algorithms systematically. Practice 265+ LeetCode questions organized by patterns and company-specific challenges to ace your coding interviews.',
     site: '@AlgoGrid',
     creator: '@AlgoGrid',
-    images: ['favicon.ico'], // Same image as Open Graph
+    images: ['https://www.algogrid.xyz/og-image.jpg'], // Replace with your actual Open Graph image
   },
   robots: {
     index: true,
@@ -65,7 +65,7 @@ const structuredData = {
       '@type': 'Organization',
       name: 'AlgoGrid',
       url: 'https://www.algogrid.xyz',
-      logo: 'https://www.algogrid.xyz/AlgoGrid.png',
+      logo: 'https://www.algogrid.xyz/AlgoGrid.png', // Ensure this file exists
       sameAs: [
         'https://x.com/nirbhay_74',
         'https://www.linkedin.com/in/nirbhay-singh-b8a169207/',
@@ -94,7 +94,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         {/* Structured Data */}
         <script
           type="application/ld+json"
@@ -110,11 +113,11 @@ export default function RootLayout({
         {/* Google Analytics using next/script */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-1ZXEEWMMJF"
-          strategy="afterInteractive" // Load script after page becomes interactive
+          strategy="afterInteractive"
         />
         <Script
-          id="google-analytics" // Unique ID for the script
-          strategy="afterInteractive" // Load script after page becomes interactive
+          id="google-analytics"
+          strategy="afterInteractive"
         >
           {`
             window.dataLayer = window.dataLayer || [];
