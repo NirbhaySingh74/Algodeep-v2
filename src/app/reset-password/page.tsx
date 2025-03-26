@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Code2 } from "lucide-react";
+import { Code2, Eye, EyeOff } from "lucide-react";
 
 function ResetPassword() {
   const router = useRouter();
@@ -12,6 +12,10 @@ function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  // New state for password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Check session on mount
   useEffect(() => {
@@ -132,11 +136,11 @@ function ResetPassword() {
                     </label>
                     <div className="relative">
                       <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         id="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-gray-800/70 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2.5 sm:py-3 focus:ring-2 focus:ring-[#6c5ce7]/70 focus:border-[#6c5ce7] focus:outline-none transition-all text-sm sm:text-base"
+                        className="w-full bg-gray-800/70 border border-gray-700 text-white rounded-lg pl-10 pr-10 py-2.5 sm:py-3 focus:ring-2 focus:ring-[#6c5ce7]/70 focus:border-[#6c5ce7] focus:outline-none transition-all text-sm sm:text-base"
                         placeholder="••••••••"
                         disabled={loading}
                         required
@@ -155,6 +159,17 @@ function ResetPassword() {
                           />
                         </svg>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300 transition"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -163,11 +178,11 @@ function ResetPassword() {
                     </label>
                     <div className="relative">
                       <input
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         id="confirm-password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full bg-gray-800/70 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2.5 sm:py-3 focus:ring-2 focus:ring-[#6c5ce7]/70 focus:border-[#6c5ce7] focus:outline-none transition-all text-sm sm:text-base"
+                        className="w-full bg-gray-800/70 border border-gray-700 text-white rounded-lg pl-10 pr-10 py-2.5 sm:py-3 focus:ring-2 focus:ring-[#6c5ce7]/70 focus:border-[#6c5ce7] focus:outline-none transition-all text-sm sm:text-base"
                         placeholder="••••••••"
                         disabled={loading}
                         required
@@ -186,6 +201,17 @@ function ResetPassword() {
                           />
                         </svg>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300 transition"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
                     </div>
                   </div>
                   <div className="text-xs text-gray-400 space-y-1">

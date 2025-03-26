@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Code2, ArrowLeft } from "lucide-react";
+import { Code2, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
 import { useAuthStore } from "@/lib/authStore";
@@ -10,6 +10,7 @@ import { useAuthStore } from "@/lib/authStore";
 function App() {
   const router = useRouter();
   const [showToast, setShowToast] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const {
     authView,
@@ -78,9 +79,12 @@ function App() {
     clearMessages();
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
-
       {/* Toast Notification */}
       {showToast && (
         <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom duration-500">
@@ -269,11 +273,11 @@ function App() {
                       </div>
                       <div className="relative">
                         <input
-                          type="password"
+                          type={showPassword ? "text" : "password"}
                           id="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="w-full bg-gray-800/70 border border-gray-700 text-white rounded-lg pl-10 pr-4 py-2.5 sm:py-3 focus:ring-2 focus:ring-[#6c5ce7]/70 focus:border-[#6c5ce7] focus:outline-none transition-all text-sm sm:text-base"
+                          className="w-full bg-gray-800/70 border border-gray-700 text-white rounded-lg pl-10 pr-12 py-2.5 sm:py-3 focus:ring-2 focus:ring-[#6c5ce7]/70 focus:border-[#6c5ce7] focus:outline-none transition-all text-sm sm:text-base"
                           placeholder="••••••••"
                           disabled={loading}
                           required
@@ -293,6 +297,18 @@ function App() {
                             />
                           </svg>
                         </div>
+                        <button
+                          type="button"
+                          onClick={togglePasswordVisibility}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                          ) : (
+                            <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
+                          )}
+                        </button>
                       </div>
                     </div>
                   )}
