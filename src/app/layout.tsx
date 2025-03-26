@@ -28,7 +28,7 @@ export const metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://www.algogrid.xyz/og-image.jpg', // Replace with your actual Open Graph image
+        url: 'https://www.algogrid.xyz/og-image.png', // Replace with your actual Open Graph image
         width: 1200,
         height: 630,
         alt: 'AlgoGrid - Master DSA Patterns',
@@ -41,7 +41,7 @@ export const metadata = {
     description: 'Learn Data Structures and Algorithms systematically. Practice 265+ LeetCode questions organized by patterns and company-specific challenges to ace your coding interviews.',
     site: '@AlgoGrid',
     creator: '@AlgoGrid',
-    images: ['https://www.algogrid.xyz/og-image.jpg'], // Replace with your actual Open Graph image
+    images: ['https://www.algogrid.xyz/og-image.png'], // Replace with your actual Open Graph image
   },
   robots: {
     index: true,
