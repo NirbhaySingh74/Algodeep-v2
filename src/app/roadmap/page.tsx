@@ -2,16 +2,16 @@
 
 import { useState, useRef, JSX } from "react";
 import { motion } from "framer-motion";
-import { 
-  ChevronDown, 
-  ChevronUp, 
-  Brain, 
-  Code, 
-  Trophy, 
-  Bookmark, 
-  MapPin, 
-  Star, 
-  ArrowRight, 
+import {
+  ChevronDown,
+  ChevronUp,
+  Brain,
+  Code,
+  Trophy,
+  Bookmark,
+  MapPin,
+  Star,
+  ArrowRight,
   MessageSquare,
   LucideArrowRight
 } from "lucide-react";
@@ -19,6 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
 // Define interfaces for the roadmap data structure
 interface RoadmapSection {
@@ -40,7 +41,7 @@ interface RoadmapStep {
 export default function DSARoadmap() {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const roadmapSteps: RoadmapStep[] = [
     {
       id: "basics",
@@ -150,7 +151,7 @@ export default function DSARoadmap() {
   ];
 
   const toggleSection = (id: string) => setExpandedSection(expandedSection === id ? null : id);
-  
+
   const gradientText = (text: string, gradient: string): JSX.Element => (
     <span className={`bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{text}</span>
   );
@@ -176,29 +177,29 @@ export default function DSARoadmap() {
           <div className="absolute left-1/2 -translate-x-1/2 h-full w-1 bg-gradient-to-b from-indigo-500 to-purple-500 opacity-30"></div>
           <div className="space-y-8">
             {roadmapSteps.map((step, index) => (
-              <motion.div 
-                key={step.id} 
-                initial={{ opacity: 0, y: 30 }} 
-                animate={{ opacity: 1, y: 0 }} 
+              <motion.div
+                key={step.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 * index }}
               >
                 <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                  <motion.div 
-                    className={`w-10 h-10 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center shadow-md`} 
+                  <motion.div
+                    className={`w-10 h-10 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center shadow-md`}
                     whileHover={{ scale: 1.1 }}
                   >
                     {step.icon}
                   </motion.div>
                 </div>
-                <motion.div 
-                  className={`bg-gray-800/50 rounded-xl border border-gray-700 shadow-lg ${index % 2 === 0 ? 'ml-auto sm:pr-20' : 'mr-auto sm:pl-20'}`} 
-                  style={{ width: '90%', maxWidth: 'calc(100% - 32px)' }} 
+                <motion.div
+                  className={`bg-gray-800/50 rounded-xl border border-gray-700 shadow-lg ${index % 2 === 0 ? 'ml-auto sm:pr-20' : 'mr-auto sm:pl-20'}`}
+                  style={{ width: '90%', maxWidth: 'calc(100% - 32px)' }}
                   whileHover={{ y: -4 }}
                 >
                   <Card className="bg-transparent border-0">
                     <div className={`p-1 ${expandedSection === step.id ? 'bg-gradient-to-r ' + step.color + ' rounded-t-xl' : ''}`}>
-                      <div 
-                        className={`p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between cursor-pointer ${expandedSection === step.id ? 'bg-gray-900/90' : 'hover:bg-gray-800/50'}`} 
+                      <div
+                        className={`p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between cursor-pointer ${expandedSection === step.id ? 'bg-gray-900/90' : 'hover:bg-gray-800/50'}`}
                         onClick={() => toggleSection(step.id)}
                       >
                         <div className="flex-1">
@@ -244,9 +245,12 @@ export default function DSARoadmap() {
           <div className="bg-gradient-to-r from-indigo-900/30 to-cyan-900/30 p-6 rounded-xl border border-indigo-500/20">
             <h3 className="text-2xl font-bold mb-3">{gradientText("Test Your Skills", "from-indigo-400 to-cyan-400")}</h3>
             <p className="text-gray-300 max-w-xl mx-auto mb-4">Practice with topic-specific problems and detailed solutions.</p>
-            <Button className="bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-700 hover:to-cyan-600 text-white px-6 py-2 rounded-full">
-              Start Practicing <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <Link href="/practice/categories">
+              <Button className="bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-700 hover:to-cyan-600 text-white px-6 py-2 rounded-full">
+                Start Practicing <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+
           </div>
         </motion.div>
       </div>

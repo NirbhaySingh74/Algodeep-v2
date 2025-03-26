@@ -74,11 +74,11 @@ export default function Footer() {
                 className="text-[#a0a0b0] hover:text-white transition-colors">
                 <Github className="h-5 w-5" />
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" 
+              <a href="https://x.com/nirbhay_74" target="_blank" rel="noopener noreferrer" 
                 className="text-[#a0a0b0] hover:text-white transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="mailto:contact@algogrid.com" 
+              <a href="nkumarwork7@gmail.com" 
                 className="text-[#a0a0b0] hover:text-white transition-colors">
                 <Mail className="h-5 w-5" />
               </a>
@@ -108,9 +108,7 @@ export default function Footer() {
                 { label: "Practice Problems", href: "/practice/categories" },
                 { label: "Learning Roadmap", href: "/roadmap" },
                 { label: "Github", href: "https://github.com/NirbhaySingh74" },
-                { label: "My Profile", href: "/profile" },
-                { label: "Help Center", href: "/help" },
-                { label: "Contact Us", href: "/contact" }
+                { label: "My Profile", href: "https://www.nirbhay.work/" },
               ].map((item, index) => (
                 <motion.li
                   key={index}
