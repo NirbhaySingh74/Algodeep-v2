@@ -2,6 +2,7 @@ import '@/styles/globals.css';
 import { Inter } from 'next/font/google';
 import Navbar from '@/components/Navbar';
 import { Providers } from './providers';
+import Script from 'next/script'; // Import next/script
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -66,9 +67,9 @@ const structuredData = {
       url: 'https://www.algogrid.xyz',
       logo: 'https://www.algogrid.xyz/AlgoGrid.png',
       sameAs: [
-        'https://x.com/nirbhay_74', // Your Twitter URL
-        'https://www.linkedin.com/in/nirbhay-singh-b8a169207/', // Replace with your LinkedIn URL
-        'https://portfolio-v2-two-rouge.vercel.app/', // Replace with your portfolio URL
+        'https://x.com/nirbhay_74',
+        'https://www.linkedin.com/in/nirbhay-singh-b8a169207/',
+        'https://portfolio-v2-two-rouge.vercel.app/',
       ],
     },
     {
@@ -94,7 +95,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="icon" href="/favicon.ico" />
-        {/* Add structured data */}
+        {/* Structured Data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
@@ -105,6 +106,23 @@ export default function RootLayout({
           <Navbar />
           {children}
         </Providers>
+
+        {/* Google Analytics using next/script */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-1ZXEEWMMJF"
+          strategy="afterInteractive" // Load script after page becomes interactive
+        />
+        <Script
+          id="google-analytics" // Unique ID for the script
+          strategy="afterInteractive" // Load script after page becomes interactive
+        >
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-1ZXEEWMMJF');
+          `}
+        </Script>
       </body>
     </html>
   );
