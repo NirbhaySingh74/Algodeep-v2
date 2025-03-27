@@ -165,36 +165,11 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
               solved_at: solved ? new Date().toISOString() : null,
               updated_at: new Date().toISOString(),
             },
-            { onConflict: ["user_id", "problem_id"] }
+            { onConflict: "user_id,problem_id" } // Fixed: Use a single string for onConflict
           );
         if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}`);
 
-        // Update user stats in the profiles table
-        const difficultyField =
-          problem.Difficulty === "Easy"
-            ? "easy_solved"
-            : problem.Difficulty === "Medium"
-              ? "medium_solved"
-              : "hard_solved";
-
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .select(difficultyField)
-          .eq("id", user.id)
-          .single();
-
-        if (profileError) throw new Error(`Profile fetch failed: ${profileError.message}`);
-
-        const currentCount = (profileData as Record<string, number>)[difficultyField] || 0;
-        const newCount = solved ? currentCount + 1 : Math.max(currentCount - 1, 0);
-
-        const { error: updateError } = await supabase
-          .from("profiles")
-          .update({ [difficultyField]: newCount })
-          .eq("id", user.id);
-        if (updateError) throw new Error(`Profile update failed: ${updateError.message}`);
-
-        // Update the store
+        // Update the store (ProgressStats will re-fetch stats from the database)
         updateStat(problem.Difficulty as "Easy" | "Medium" | "Hard", solved);
 
         toast.success("Solved status saved!", { id: `solved-${problemId}` });
@@ -244,7 +219,7 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
               solved_at: problem?.solved ? problem.solved_at || new Date().toISOString() : null,
               updated_at: new Date().toISOString(),
             },
-            { onConflict: ["user_id", "problem_id"] }
+            { onConflict: "user_id,problem_id" } // Fixed: Use a single string for onConflict
           );
         if (error) throw new Error(`Favorite upsert failed: ${error.message}`);
 
@@ -295,7 +270,7 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
               solved_at: problem?.solved ? problem.solved_at || new Date().toISOString() : null,
               updated_at: new Date().toISOString(),
             },
-            { onConflict: ["user_id", "problem_id"] }
+            { onConflict: "user_id,problem_id" } // Fixed: Use a single string for onConflict
           );
         if (error) throw new Error(`Last attempted upsert failed: ${error.message}`);
 
