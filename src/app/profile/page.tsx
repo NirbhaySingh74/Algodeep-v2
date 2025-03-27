@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useNavbar } from "@/lib/useNavbar";
@@ -42,6 +42,7 @@ export default function Profile() {
   const { stats, fetchStats, setStats } = useAppStore();
   const [isStatsLoading, setIsStatsLoading] = useState<boolean>(true);
   const [particles, setParticles] = useState<Particle[]>([]);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   // Cursor effect (matching the hero section)
   const cursorX = useMotionValue<number>(-100);
@@ -55,6 +56,11 @@ export default function Profile() {
   const totalEasy = problems.filter((p) => p.difficulty === "Easy").length;
   const totalMedium = problems.filter((p) => p.difficulty === "Medium").length;
   const totalHard = problems.filter((p) => p.difficulty === "Hard").length;
+
+  // Prefetch login page
+  useEffect(() => {
+    router.prefetch('/login');
+  }, [router]);
 
   // Mouse movement effects (matching the hero section)
   useEffect(() => {
@@ -71,7 +77,6 @@ export default function Profile() {
   useEffect(() => {
     const handleResize = () => {
       if (typeof window !== "undefined") {
-        // Create particles
         const newParticles: Particle[] = [...Array(20)].map(() => ({
           x: Math.random() * window.innerWidth,
           y: Math.random() * window.innerHeight * 0.7,
@@ -96,15 +101,16 @@ export default function Profile() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      router.push("/login");
+      setIsSigningOut(true);
+      await supabase.auth.signOut();
+      router.push("/login", { scroll: false });
     } catch (error) {
       console.error("Error signing out:", error);
+      setIsSigningOut(false);
     }
-  };
+  }, [router]);
 
   useEffect(() => {
     if (!sessionLoading && !user) {
@@ -113,7 +119,6 @@ export default function Profile() {
     }
 
     if (user?.id) {
-      // Fetch stats when the component mounts
       const loadStats = async () => {
         setIsStatsLoading(true);
         await fetchStats(user.id);
@@ -121,7 +126,6 @@ export default function Profile() {
       };
       loadStats();
 
-      // Set up real-time subscription
       const channel = supabase
         .channel("profiles_changes")
         .on(
@@ -182,13 +186,8 @@ export default function Profile() {
 
   return (
     <div className="relative">
-      {/* Background elements matching the hero section style */}
       <div className="fixed inset-0 bg-gradient-to-b from-[#10101c] via-[#1a1a28] to-[#1e1e2e] -z-10"></div>
-
-      {/* Perspective grid */}
       <div className="fixed inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxwYXR0ZXJuIGlkPSJncmlkIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMDAgMCBMIDAgMCAwIDEwMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDEwOCwgOTIsIDIzMSwgMC4wNSkiIHN0cm9rZS13aWR0aD0iMC41Ii8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIiAvPjwvc3ZnPg==')] opacity-30 -z-10"></div>
-
-      {/* Gradient orbs */}
       <div
         className="fixed top-1/3 left-1/4 w-96 h-96 bg-[#6c5ce7]/10 rounded-full filter blur-[100px] opacity-50 animate-pulse -z-10"
         style={{ animationDuration: "8s" }}
@@ -197,8 +196,6 @@ export default function Profile() {
         className="fixed bottom-1/4 right-1/3 w-80 h-80 bg-[#00b894]/10 rounded-full filter blur-[100px] opacity-30 animate-pulse -z-10"
         style={{ animationDuration: "12s" }}
       ></div>
-
-      {/* Cursor follower */}
       <motion.div
         className="hidden md:block fixed w-32 h-32 rounded-full pointer-events-none z-0"
         style={{
@@ -209,8 +206,6 @@ export default function Profile() {
           transform: "translate(-50%, -50%)",
         }}
       />
-
-      {/* Animated particles */}
       <div className="fixed inset-0 z-10 overflow-hidden pointer-events-none">
         {particles.map((particle, i) => (
           <motion.div
@@ -293,7 +288,6 @@ export default function Profile() {
                   alt="User Avatar"
                   className="h-32 w-32 rounded-full border-4 border-[#6c5ce7] object-cover shadow-lg"
                 />
-                
                 <motion.div
                   className="absolute bottom-0 right-0 flex space-x-2"
                   whileHover={{ scale: 1.1 }}
@@ -301,10 +295,19 @@ export default function Profile() {
                 >
                   <button
                     onClick={handleSignOut}
-                    className="bg-red-600 p-2 rounded-full hover:bg-red-500 transition-colors"
+                    disabled={isSigningOut}
+                    className={`p-2 rounded-full transition-colors ${
+                      isSigningOut 
+                        ? 'bg-gray-600 cursor-not-allowed' 
+                        : 'bg-red-600 hover:bg-red-500'
+                    }`}
                     title="Sign Out"
                   >
-                    <LogOut className="h-4 w-4 text-white" />
+                    {isSigningOut ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    ) : (
+                      <LogOut className="h-4 w-4 text-white" />
+                    )}
                   </button>
                 </motion.div>
               </motion.div>
@@ -359,7 +362,6 @@ export default function Profile() {
                 </span>
               </h2>
               <div className="space-y-6">
-                {/* Easy Bar */}
                 <motion.div
                   initial={{ width: "0%" }}
                   animate={{ width: "100%" }}
@@ -386,7 +388,6 @@ export default function Profile() {
                   </div>
                 </motion.div>
 
-                {/* Medium Bar */}
                 <motion.div
                   initial={{ width: "0%" }}
                   animate={{ width: "100%" }}
@@ -413,7 +414,6 @@ export default function Profile() {
                   </div>
                 </motion.div>
 
-                {/* Hard Bar */}
                 <motion.div
                   initial={{ width: "0%" }}
                   animate={{ width: "100%" }}

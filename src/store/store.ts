@@ -75,21 +75,59 @@ export const useAppStore = create<AppState>((set) => ({
     }),
   fetchStats: async (userId: string) => {
     try {
+      // Query user_problems to get all solved problems for the user
       const { data, error } = await supabase
-        .from("profiles")
-        .select("easy_solved, medium_solved, hard_solved")
-        .eq("id", userId)
-        .single();
+        .from("user_problems")
+        .select("problem_id, solved_at")
+        .eq("user_id", userId)
+        .not("solved_at", "is", null); // Only fetch solved problems
+
       if (error) throw error;
-      set({
-        stats: {
-          easySolved: data.easy_solved || 0,
-          mediumSolved: data.medium_solved || 0,
-          hardSolved: data.hard_solved || 0,
+
+      if (!data || data.length === 0) {
+        // If no solved problems, set stats to 0
+        set({
+          stats: {
+            easySolved: 0,
+            mediumSolved: 0,
+            hardSolved: 0,
+          },
+        });
+        return;
+      }
+
+      // Get the problem IDs of solved problems
+      const solvedProblemIds = data.map((item) => item.problem_id);
+
+      // Query the problems table to get the difficulty of each solved problem
+      const { data: problemsData, error: problemsError } = await supabase
+        .from("problems")
+        .select("id, difficulty")
+        .in("id", solvedProblemIds);
+
+      if (problemsError) throw problemsError;
+
+      // Count the number of solved problems per difficulty
+      const stats = problemsData.reduce(
+        (acc, problem) => {
+          if (problem.difficulty === "Easy") acc.easySolved += 1;
+          else if (problem.difficulty === "Medium") acc.mediumSolved += 1;
+          else if (problem.difficulty === "Hard") acc.hardSolved += 1;
+          return acc;
         },
-      });
+        { easySolved: 0, mediumSolved: 0, hardSolved: 0 }
+      );
+
+      set({ stats });
     } catch (err) {
       console.error("Error fetching stats:", err);
+      set({
+        stats: {
+          easySolved: 0,
+          mediumSolved: 0,
+          hardSolved: 0,
+        },
+      });
     }
   },
 }));

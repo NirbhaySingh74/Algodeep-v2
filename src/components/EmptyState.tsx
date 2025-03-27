@@ -27,7 +27,11 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onClearFilters }) => (
         <p className="text-gray-400 max-w-md mx-auto">
           No problems match your current filters. Try adjusting your search or filter settings.
         </p>
-        <Button className="mt-4" variant="outline" onClick={onClearFilters}>
+        <Button
+          className="mt-4 bg-transparent border-indigo-500 text-indigo-400 hover:bg-indigo-500 hover:text-white transition-colors"
+          variant="outline"
+          onClick={onClearFilters}
+        >
           Clear All Filters
         </Button>
       </motion.div>

@@ -9,6 +9,9 @@ import { ShimmerRow } from "./ShimmerRow";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { supabase } from "@/lib/supabase";
+import { useNavbar } from "@/lib/useNavbar";
+import { toast } from "react-hot-toast";
 
 interface Problem {
   ID: number;
@@ -27,7 +30,6 @@ interface CompanyProblemsProps {
   loading: boolean;
 }
 
-// Type definitions for colors
 interface ColorConfig {
   bg: string;
   text: string;
@@ -45,30 +47,275 @@ const getFrequencyColor = (frequency: number): ColorConfig => {
   return { bg: "bg-gray-700", text: "text-gray-300" };
 };
 
+// Extend the Problem interface to include additional fields
+interface ExtendedProblem extends Problem {
+  solved: boolean;
+  favorite: boolean;
+  lastAttempted?: string;
+  solved_at: string | null;
+}
+
 const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
   ({ company, problems, loading }) => {
-    const { difficultyFilter, searchQuery, setDifficultyFilter } = useAppStore();
+    const { difficultyFilter, searchQuery, setDifficultyFilter, setSearchQuery, updateStat } = useAppStore();
+    const { user } = useNavbar();
     const [sortConfig, setSortConfig] = useState<{
       key: keyof Problem | null;
       direction: "asc" | "desc";
     }>({ key: null, direction: "asc" });
     const [viewMode, setViewMode] = useState<"all" | "solved" | "unsolved" | "favorites">("all");
     const [itemsPerPage, setItemsPerPage] = useState<number>(15);
-    const [favorites, setFavorites] = useState<Record<number, boolean>>({});
-    const [lastAttempted, setLastAttempted] = useState<Record<number, string>>({});
-    const [solvedStatus, setSolvedStatus] = useState<Record<number, boolean>>({});
     const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Step 1: Initialize problemsData with extended fields
+    const [problemsData, setProblemsData] = useState<ExtendedProblem[]>(
+      problems.map((p) => ({
+        ...p,
+        solved: p.solved ?? false,
+        favorite: p.favorite ?? false,
+        lastAttempted: p.lastAttempted,
+        solved_at: null,
+      }))
+    );
 
     const loadMoreRef: RefObject<HTMLDivElement | null> = React.useRef(null);
-
     const isInView = useIntersectionObserver(loadMoreRef as RefObject<Element>, { threshold: 0.1 });
 
+    // Step 2: Fetch user problem metadata from the company_user_problems table
     useEffect(() => {
-      setItemsPerPage(15);
-    }, [company]);
+      const fetchUserProblems = async () => {
+        if (!user?.id) {
+          // If no user, reset to default values
+          setProblemsData(
+            problems.map((p) => ({
+              ...p,
+              solved: false,
+              favorite: false,
+              lastAttempted: undefined,
+              solved_at: null,
+            }))
+          );
+          return;
+        }
 
+        try {
+          const { data, error } = await supabase
+            .from("company_user_problems")
+            .select("problem_id, last_attempted, favorite, solved_at")
+            .eq("user_id", user.id);
+
+          if (error) throw new Error(`Fetch failed: ${error.message}`);
+
+          const userProblems = data as { problem_id: string; last_attempted: string | null; favorite: boolean; solved_at: string | null }[];
+          const solvedProblemIds = new Set(userProblems.filter((up) => up.solved_at !== null).map((up) => up.problem_id));
+          const favoriteProblemIds = new Set(userProblems.filter((up) => up.favorite).map((up) => up.problem_id));
+          const lastAttemptedMap = new Map(userProblems.map((up) => [up.problem_id, up.last_attempted]));
+          const solvedAtMap = new Map(userProblems.map((up) => [up.problem_id, up.solved_at]));
+
+          setProblemsData(
+            problems.map((problem) => ({
+              ...problem,
+              solved: solvedProblemIds.has(problem.ID.toString()),
+              favorite: favoriteProblemIds.has(problem.ID.toString()),
+              lastAttempted: lastAttemptedMap.get(problem.ID.toString()) || undefined,
+              solved_at: solvedAtMap.get(problem.ID.toString()) || null,
+            }))
+          );
+        } catch (err) {
+          console.error("Fetch error:", err instanceof Error ? err.message : String(err));
+          setError("Failed to fetch user problems");
+        }
+      };
+
+      fetchUserProblems();
+    }, [problems, user]);
+
+    // Step 3: Update solved status in the database
+    const updateProblemStatus = async (problemId: number, solved: boolean) => {
+      const problem = problemsData.find((p) => p.ID === problemId);
+      if (!problem) return;
+
+      // Optimistically update the local state
+      setProblemsData((prev) =>
+        prev.map((p) =>
+          p.ID === problemId
+            ? { ...p, solved, solved_at: solved ? new Date().toISOString() : null }
+            : p
+        )
+      );
+
+      if (!user?.id) {
+        setError("Changes are not saved. Please log in to save your progress.");
+        return;
+      }
+
+      try {
+        toast.loading("Saving solved status...", { id: `solved-${problemId}` });
+
+        // Update the company_user_problems table
+        const { error: upsertError } = await supabase
+          .from("company_user_problems")
+          .upsert(
+            {
+              user_id: user.id,
+              problem_id: problemId.toString(),
+              favorite: problem.favorite || false,
+              last_attempted: problem.lastAttempted || null,
+              solved_at: solved ? new Date().toISOString() : null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: ["user_id", "problem_id"] }
+          );
+        if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}`);
+
+        // Update user stats in the profiles table
+        const difficultyField =
+          problem.Difficulty === "Easy"
+            ? "easy_solved"
+            : problem.Difficulty === "Medium"
+              ? "medium_solved"
+              : "hard_solved";
+
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select(difficultyField)
+          .eq("id", user.id)
+          .single();
+
+        if (profileError) throw new Error(`Profile fetch failed: ${profileError.message}`);
+
+        const currentCount = (profileData as Record<string, number>)[difficultyField] || 0;
+        const newCount = solved ? currentCount + 1 : Math.max(currentCount - 1, 0);
+
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ [difficultyField]: newCount })
+          .eq("id", user.id);
+        if (updateError) throw new Error(`Profile update failed: ${updateError.message}`);
+
+        // Update the store
+        updateStat(problem.Difficulty as "Easy" | "Medium" | "Hard", solved);
+
+        toast.success("Solved status saved!", { id: `solved-${problemId}` });
+      } catch (err) {
+        console.error("Update error:", err instanceof Error ? err.message : String(err));
+        // Revert the local state on error
+        setProblemsData((prev) =>
+          prev.map((p) =>
+            p.ID === problemId
+              ? { ...p, solved: !solved, solved_at: !solved ? null : p.solved_at }
+              : p
+          )
+        );
+        setError(err instanceof Error ? err.message : "Failed to update problem status");
+        toast.error("Failed to save solved status.", { id: `solved-${problemId}` });
+      }
+    };
+
+    // Step 4: Update favorite status in the database
+    const toggleFavorite = async (problemId: number) => {
+      const problem = problemsData.find((p) => p.ID === problemId);
+      const newFavoriteStatus = !problem?.favorite;
+
+      // Optimistically update the local state
+      setProblemsData((prev) =>
+        prev.map((p) =>
+          p.ID === problemId ? { ...p, favorite: newFavoriteStatus } : p
+        )
+      );
+
+      if (!user?.id) {
+        setError("Changes are not saved. Please log in to save your progress.");
+        return;
+      }
+
+      try {
+        toast.loading("Saving favorite status...", { id: `favorite-${problemId}` });
+
+        const { error } = await supabase
+          .from("company_user_problems")
+          .upsert(
+            {
+              user_id: user.id,
+              problem_id: problemId.toString(),
+              favorite: newFavoriteStatus,
+              last_attempted: problem?.lastAttempted || null,
+              solved_at: problem?.solved ? problem.solved_at || new Date().toISOString() : null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: ["user_id", "problem_id"] }
+          );
+        if (error) throw new Error(`Favorite upsert failed: ${error.message}`);
+
+        toast.success(newFavoriteStatus ? "Added to favorites!" : "Removed from favorites!", {
+          id: `favorite-${problemId}`,
+        });
+      } catch (err) {
+        console.error("Favorite update error:", err instanceof Error ? err.message : String(err));
+        // Revert the local state on error
+        setProblemsData((prev) =>
+          prev.map((p) =>
+            p.ID === problemId ? { ...p, favorite: !newFavoriteStatus } : p
+          )
+        );
+        setError(err instanceof Error ? err.message : "Failed to update favorite status");
+        toast.error("Failed to save favorite status.", { id: `favorite-${problemId}` });
+      }
+    };
+
+    // Step 5: Update last attempted timestamp in the database
+    const updateLastAttempted = async (problemId: number) => {
+      const newLastAttempted = new Date().toISOString();
+      const problem = problemsData.find((p) => p.ID === problemId);
+
+      // Optimistically update the local state
+      setProblemsData((prev) =>
+        prev.map((p) =>
+          p.ID === problemId ? { ...p, lastAttempted: newLastAttempted } : p
+        )
+      );
+
+      if (!user?.id) {
+        setError("Changes are not saved. Please log in to save your progress.");
+        return;
+      }
+
+      try {
+        toast.loading("Saving attempt history...", { id: `history-${problemId}` });
+
+        const { error } = await supabase
+          .from("company_user_problems")
+          .upsert(
+            {
+              user_id: user.id,
+              problem_id: problemId.toString(),
+              last_attempted: newLastAttempted,
+              favorite: problem?.favorite || false,
+              solved_at: problem?.solved ? problem.solved_at || new Date().toISOString() : null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: ["user_id", "problem_id"] }
+          );
+        if (error) throw new Error(`Last attempted upsert failed: ${error.message}`);
+
+        toast.success("Attempt history saved!", { id: `history-${problemId}` });
+      } catch (err) {
+        console.error("Last attempted update error:", err instanceof Error ? err.message : String(err));
+        // Revert the local state on error
+        setProblemsData((prev) =>
+          prev.map((p) =>
+            p.ID === problemId ? { ...p, lastAttempted: undefined } : p
+          )
+        );
+        setError(err instanceof Error ? err.message : "Failed to update last attempted");
+        toast.error("Failed to save attempt history.", { id: `history-${problemId}` });
+      }
+    };
+
+    // Step 6: Update the filtering logic to use problemsData
     const filteredProblems = useMemo(() => {
-      const filtered = problems.filter((problem) => {
+      const filtered = problemsData.filter((problem) => {
         if (difficultyFilter.length > 0 && !difficultyFilter.includes(problem.Difficulty)) return false;
         if (searchQuery) {
           const query = searchQuery.toLowerCase();
@@ -77,8 +324,8 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
             problem.ID.toString().includes(query)
           );
         }
-        const isSolved = solvedStatus[problem.ID] ?? problem.solved;
-        const isFavorite = favorites[problem.ID] ?? false;
+        const isSolved = problem.solved;
+        const isFavorite = problem.favorite;
         if (viewMode === "solved" && !isSolved) return false;
         if (viewMode === "unsolved" && isSolved) return false;
         if (viewMode === "favorites" && !isFavorite) return false;
@@ -89,10 +336,9 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
         filtered.sort((a, b) => {
           const valueA = a[sortConfig.key as keyof Problem];
           const valueB = b[sortConfig.key as keyof Problem];
-          
-          // Handle potential undefined values with type guards
+
           if (valueA === undefined || valueB === undefined) return 0;
-          
+
           if (typeof valueA === "string" && typeof valueB === "string") {
             return sortConfig.direction === "asc"
               ? valueA.localeCompare(valueB)
@@ -112,10 +358,10 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
         });
       }
       return filtered;
-    }, [problems, difficultyFilter, searchQuery, sortConfig, viewMode, favorites, solvedStatus]);
+    }, [problemsData, difficultyFilter, searchQuery, sortConfig, viewMode]);
 
-    const paginatedProblems = useMemo(() => 
-      filteredProblems.slice(0, itemsPerPage), 
+    const paginatedProblems = useMemo(() =>
+      filteredProblems.slice(0, itemsPerPage),
       [filteredProblems, itemsPerPage]
     );
 
@@ -130,18 +376,8 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
     }, [isInView, loading, filteredProblems.length, itemsPerPage, isLoadingMore]);
 
     useEffect(() => {
-      const newFavorites: Record<number, boolean> = {};
-      const newLastAttempted: Record<number, string> = {};
-      const newSolvedStatus: Record<number, boolean> = {};
-      problems.forEach((problem) => {
-        newFavorites[problem.ID] = problem.favorite ?? false;
-        if (problem.lastAttempted) newLastAttempted[problem.ID] = problem.lastAttempted;
-        newSolvedStatus[problem.ID] = problem.solved;
-      });
-      setFavorites(newFavorites);
-      setLastAttempted(newLastAttempted);
-      setSolvedStatus(newSolvedStatus);
-    }, [problems]);
+      setItemsPerPage(15);
+    }, [company]);
 
     const requestSort = (key: keyof Problem) => {
       let direction: "asc" | "desc" = "asc";
@@ -159,6 +395,12 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
       }, 1500);
     };
 
+    const clearAllFilters = () => {
+      setDifficultyFilter([]);
+      setSearchQuery("");
+      setViewMode("all");
+    };
+
     return (
       <motion.div
         className="bg-gray-900 rounded-xl overflow-hidden border border-gray-800 shadow-lg flex flex-col h-full"
@@ -167,12 +409,17 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
         exit={{ opacity: 0, y: 20 }}
         transition={{ duration: 0.4 }}
       >
+        {error && (
+          <div className="p-4 bg-red-900 text-red-300 text-center">
+            {error}
+          </div>
+        )}
         <div className="p-5 border-b border-gray-800">
           <div className="flex items-center">
             <div className="w-14 h-14 rounded-full bg-white p-2 mr-4 flex items-center justify-center shadow-md">
               <img
-                src={company.logo} 
-                alt={company.name} 
+                src={company.logo}
+                alt={company.name}
                 width={40}
                 height={40}
                 className="object-contain"
@@ -196,26 +443,26 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
           <table className="min-w-full divide-y divide-gray-800">
             <thead className="bg-gray-800 sticky top-0 z-10">
               <tr>
-                <th 
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-16 cursor-pointer" 
+                <th
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-16 cursor-pointer"
                   onClick={() => requestSort("solved")}
                 >
                   Status
                 </th>
-                <th 
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider cursor-pointer" 
-                  onClick={() => requestSort("Title")} // Fixed typo in key name
+                <th
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider cursor-pointer"
+                  onClick={() => requestSort("Title")}
                 >
                   Title
                 </th>
-                <th 
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-28 cursor-pointer" 
+                <th
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-28 cursor-pointer"
                   onClick={() => requestSort("Difficulty")}
                 >
                   Difficulty
                 </th>
-                <th 
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-28 cursor-pointer" 
+                <th
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider w-28 cursor-pointer"
                   onClick={() => requestSort("Frequency")}
                 >
                   Frequency
@@ -227,7 +474,7 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
             </thead>
             <tbody className="bg-gray-900 divide-y divide-gray-800">
               {loading ? (
-                Array(5).fill(0).map((_, i) => <ShimmerRow key={i} />)
+                Array(20).fill(0).map((_, i) => <ShimmerRow key={i} />)
               ) : paginatedProblems.length > 0 ? (
                 paginatedProblems.map((problem, index) => (
                   <ProblemRow
@@ -236,16 +483,13 @@ const CompanyProblems: React.FC<CompanyProblemsProps> = React.memo(
                     index={index}
                     difficultyColors={difficultyColors}
                     getFrequencyColor={getFrequencyColor}
-                    favorites={favorites}
-                    lastAttempted={lastAttempted}
-                    solvedStatus={solvedStatus}
-                    setFavorites={setFavorites}
-                    setLastAttempted={setLastAttempted}
-                    setSolvedStatus={setSolvedStatus}
+                    updateProblemStatus={updateProblemStatus}
+                    toggleFavorite={toggleFavorite}
+                    updateLastAttempted={updateLastAttempted}
                   />
                 ))
               ) : (
-                <EmptyState onClearFilters={() => setDifficultyFilter([])} />
+                <EmptyState onClearFilters={clearAllFilters} />
               )}
             </tbody>
           </table>

@@ -2,6 +2,7 @@ import '@/styles/globals.css';
 import { Inter } from 'next/font/google';
 import Navbar from '@/components/Navbar';
 import { Providers } from './providers';
+import { Toaster } from "react-hot-toast";
 import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -108,6 +109,7 @@ export default function RootLayout({
         <Providers>
           <Navbar />
           {children}
+          <Toaster position="top-right" />
         </Providers>
 
         {/* Google Analytics using next/script */}
