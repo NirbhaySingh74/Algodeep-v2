@@ -1,14 +1,8 @@
 "use client";
-import Sidebar from "@/components/Sidebar";
+
 import CompaniesView from "@/components/CompaniesView";
 import { useAppStore } from "@/store/store";
-import { motion } from "framer-motion";
 import React, { useEffect, useCallback } from "react";
-
-const contentVariants = {
-  expanded: { marginLeft: "280px" },
-  collapsed: { marginLeft: "80px" },
-};
 
 type CompaniesPageProps = {
   params: Promise<{ companyId: string }>;
@@ -27,9 +21,13 @@ export default function CompanyPage({ params }: CompaniesPageProps) {
   const fetchCompanyData = useCallback(async (company: string) => {
     setLoading(true);
     try {
+      console.log(`Fetching problems for company: ${company}`); // Debug log
       const response = await fetch(`/api/companies/${company}`);
-      if (!response.ok) throw new Error("Failed to fetch");
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+      }
       const data = await response.json();
+      console.log("Fetched problems:", data); // Debug log
       setCompanyProblems(data);
     } catch (error) {
       console.error("Failed to fetch company problems:", error);
@@ -40,24 +38,11 @@ export default function CompanyPage({ params }: CompaniesPageProps) {
 
   useEffect(() => {
     if (companyId && companyId !== selectedCompany) {
+      console.log(`Setting selected company to: ${companyId}`); // Debug log
       setSelectedCompany(companyId);
       fetchCompanyData(companyId);
     }
   }, [companyId, fetchCompanyData, selectedCompany, setSelectedCompany]);
 
-  return (
-    <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
-      <Sidebar />
-      <motion.div
-        className="flex-1 flex flex-col overflow-hidden mt-16"
-        variants={contentVariants}
-        animate={sidebarCollapsed ? "collapsed" : "expanded"}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      >
-        <main className="flex-1 overflow-y-auto p-6 bg-gray-950">
-          <CompaniesView />
-        </main>
-      </motion.div>
-    </div>
-  );
+  return <CompaniesView />;
 }

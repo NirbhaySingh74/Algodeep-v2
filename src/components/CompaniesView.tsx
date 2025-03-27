@@ -8,9 +8,14 @@ import { companies } from "@/data/companies";
 import { Badge } from "@/components/ui/badge";
 import CompanyGrid from "./CompanyGrid";
 import CompanyProblems from "./CompanyProblems";
+import { usePathname } from "next/navigation";
 
-const CompaniesView: React.FC = () => {
+const CompaniesView: React.FC = React.memo(() => {
   const { selectedCompany, setSelectedCompany, companyProblems, loading } = useAppStore();
+  const pathname = usePathname();
+
+  const companyId = pathname.split("/").pop();
+  const isCompanyPage = pathname.startsWith("/practice/companies/") && companyId !== "companies";
 
   const handleCompanyClick = useCallback(
     (companyId: string) => {
@@ -18,6 +23,8 @@ const CompaniesView: React.FC = () => {
     },
     [selectedCompany, setSelectedCompany]
   );
+
+  const selectedCompanyData = companies.find((c) => c.id === companyId);
 
   return (
     <motion.div
@@ -31,13 +38,16 @@ const CompaniesView: React.FC = () => {
         selectedCompany={selectedCompany}
         onCompanyClick={handleCompanyClick}
       />
-      {selectedCompany ? (
+
+      {isCompanyPage && selectedCompanyData && (
         <CompanyProblems
-          company={companies.find((c) => c.id === selectedCompany)!}
+          company={selectedCompanyData}
           problems={companyProblems}
           loading={loading}
         />
-      ) : (
+      )}
+
+      {!isCompanyPage && (
         <motion.div
           className="bg-gray-900 p-8 md:p-10 rounded-xl text-center border border-gray-800 shadow-lg"
           initial={{ opacity: 0, y: 20 }}
@@ -88,6 +98,7 @@ const CompaniesView: React.FC = () => {
       )}
     </motion.div>
   );
-};
+});
 
+CompaniesView.displayName = "CompaniesView";
 export default CompaniesView;

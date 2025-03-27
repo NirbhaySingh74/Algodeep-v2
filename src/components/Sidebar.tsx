@@ -9,7 +9,7 @@ import { useAppStore } from "@/store/store";
 import { problems } from "@/data/problems";
 import { useNavbar } from "@/lib/useNavbar";
 import { supabase } from "@/lib/supabase";
-// import Link from "next/link";
+
 const sidebarVariants = {
   expanded: { width: "280px" },
   collapsed: { width: "80px" },
@@ -138,9 +138,7 @@ const Sidebar: React.FC = () => {
                 isCategoriesView ? "bg-gray-800" : ""
               }`}
               whileHover={{ scale: 1.02 }}
-              onClick={() => {
-                setSelectedCompany(null);
-              }}
+              // Removed setSelectedCompany(null) from here
             >
               <LayoutGrid className="h-5 w-5 text-indigo-400 mr-2" />
               {!sidebarCollapsed && <span className="text-gray-200">By Category</span>}
@@ -206,28 +204,27 @@ const Sidebar: React.FC = () => {
         )}
       </div>
 
-     {/* User Profile Section */}
-    <div className="p-4 border-t border-gray-800 flex items-center">
-      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
-        <User className="h-4 w-4 text-white" />
+      {/* User Profile Section */}
+      <div className="p-4 border-t border-gray-800 flex items-center">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+          <User className="h-4 w-4 text-white" />
+        </div>
+        {!sidebarCollapsed && (
+          <motion.span className="ml-2 text-gray-200">
+            {user?.full_name ? (
+              user.full_name
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center py-2 text-[#a0a0b0] hover:text-white"
+              >
+                <LogIn className="h-5 w-5 mr-2" />
+                <span>Login / Sign Up</span>
+              </Link>
+            )}
+          </motion.span>
+        )}
       </div>
-      {!sidebarCollapsed && (
-        <motion.span className="ml-2 text-gray-200">
-          {user?.full_name ? (
-            user.full_name // Display user's full name if logged in
-          ) : (
-            <Link
-                    href="/login"
-                    className="flex items-center py-2 text-[#a0a0b0] hover:text-white"
-                   
-                  >
-                    <LogIn className="h-5 w-5 mr-2" />
-                    <span>Login / Sign Up</span>
-                  </Link>
-          )}
-        </motion.span>
-      )}
-    </div>
     </motion.div>
   );
 };
