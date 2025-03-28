@@ -257,7 +257,7 @@ export default function Profile() {
       </div>
 
       <main className="min-h-screen pt-24 pb-16 px-4 text-white relative z-20">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -348,11 +348,15 @@ export default function Profile() {
                 transition={{ type: "spring", stiffness: 300, damping: 15 }}
               >
                 <Award className="h-6 w-6 text-[#00b894]" />
-                <div>
-                  <p className="text-[#a0a0b0]">Total Problems Solved</p>
-                  <p className="font-semibold text-white bg-clip-text text-transparent bg-gradient-to-r from-[#a29bfe] to-[#00b894]">
-                    {stats.easySolved + stats.mediumSolved + stats.hardSolved}
+                <div className="flex-grow">
+                  <p className="text-[#a0a0b0] text-sm sm:text-base">
+                    Total Problems Solved By Category
                   </p>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-semibold text-white bg-clip-text text-transparent bg-gradient-to-r from-[#a29bfe] to-[#00b894]">
+                      {stats.easySolved + stats.mediumSolved + stats.hardSolved}
+                    </span>
+                  </div>
                 </div>
               </motion.div>
             </div>
