@@ -3,16 +3,17 @@ import Link from "next/link";
 import { Code2, Github, Twitter, Mail, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { supabase } from "@/lib/supabase"; // Make sure this path matches your Supabase client setup
+import { supabase } from "@/lib/supabase";
 import { toast } from "react-hot-toast";
 
 export default function Footer() {
   const [emailInput, setEmailInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubscribe = async (e) => {
+  // Type the event as React.MouseEvent<HTMLButtonElement> since it's from a button click
+  const handleSubscribe = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    
+
     if (!emailInput || !/^\S+@\S+\.\S+$/.test(emailInput)) {
       toast.error("Please enter a valid email address");
       return;
