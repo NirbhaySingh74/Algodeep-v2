@@ -20,7 +20,7 @@ export async function GET(
     );
   }
 
-  console.log("Fetching data for company:", company);
+  // console.log("Fetching data for company:", company);
 
   try {
     const response = await axios.get<string>(

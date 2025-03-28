@@ -23,7 +23,7 @@ const SearchAndFilters: React.FC = () => {
         : [...difficultyFilter, difficulty]
     );
   };
-console.log("difficultfilter", difficultyFilter);
+// console.log("difficultfilter", difficultyFilter);
 
   const toggleStatusFilter = (status: string) => {
     setStatusFilter(

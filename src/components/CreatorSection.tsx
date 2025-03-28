@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Linkedin, Github, Mail, Briefcase } from "lucide-react";
+import { Linkedin, Github, Mail, Briefcase, Code, Server, Database } from "lucide-react";
 import profilePic from "../../public/profilePic.webp";
 
 export default function CreatorSection() {
@@ -103,26 +103,36 @@ export default function CreatorSection() {
 
             <div className="lg:w-2/3">
               <p className="text-[#a0a0b0] mb-4 leading-relaxed">
-                Hello! I'm a recent Computer Science graduate from LNCT University (2024 batch) with a passion for web development and problem-solving.
+                As a passionate Computer Science graduate from LNCT University, I bring a dynamic blend of technical expertise and innovative problem-solving skills to the world of web development.
               </p>
               <p className="text-[#a0a0b0] mb-4 leading-relaxed">
-                I specialize in full-stack development using the MERN stack (MongoDB, Express.js, React.js, Node.js), as well as modern frameworks like Next.js and database solutions like PostgreSQL and Supabase.
+                My technical arsenal spans the entire web development spectrum, with deep expertise in the MERN stack and modern frameworks like Next.js. I craft scalable, performant applications that seamlessly blend elegant design with robust functionality.
               </p>
               <p className="text-[#a0a0b0] mb-4 leading-relaxed">
-                Currently, I'm actively seeking opportunities as a Full Stack Developer, Frontend Developer, or Backend Developer where I can apply my technical skills and continue growing as a professional.
+                Beyond technical skills, I'm a creative problem-solver who thrives on transforming complex challenges into elegant, user-centric solutions. My approach combines technical precision with a passion for creating impactful digital experiences.
               </p>
               
-              <div className="bg-[#1e1e2e] p-4 rounded-lg border border-[#3d3d5c] mt-6">
-                <div className="flex items-start">
-                  <div className="bg-[#6c5ce7]/20 p-2 rounded mr-4">
-                    <Briefcase className="h-5 w-5 text-[#6c5ce7]" />
+              <div className="grid grid-cols-3 gap-4 mt-6">
+                <div className="bg-[#1e1e2e] p-4 rounded-lg border border-[#3d3d5c] flex flex-col items-center">
+                  <div className="bg-[#6c5ce7]/20 p-3 rounded-full mb-2">
+                    <Code className="h-6 w-6 text-[#6c5ce7]" />
                   </div>
-                  <div>
-                    <h4 className="text-white font-medium mb-1">What I'm Looking For</h4>
-                    <p className="text-[#a0a0b0] text-sm">
-                      I'm passionate about creating user-friendly applications and solving complex problems. I'm looking for a team where I can contribute my skills while continuing to learn and grow.
-                    </p>
+                  <h4 className="text-white font-medium text-center mb-1">Frontend</h4>
+                  <p className="text-[#a0a0b0] text-sm text-center">React, Next.js, Tailwind</p>
+                </div>
+                <div className="bg-[#1e1e2e] p-4 rounded-lg border border-[#3d3d5c] flex flex-col items-center">
+                  <div className="bg-[#6c5ce7]/20 p-3 rounded-full mb-2">
+                    <Server className="h-6 w-6 text-[#6c5ce7]" />
                   </div>
+                  <h4 className="text-white font-medium text-center mb-1">Backend</h4>
+                  <p className="text-[#a0a0b0] text-sm text-center">Node.js, Express</p>
+                </div>
+                <div className="bg-[#1e1e2e] p-4 rounded-lg border border-[#3d3d5c] flex flex-col items-center">
+                  <div className="bg-[#6c5ce7]/20 p-3 rounded-full mb-2">
+                    <Database className="h-6 w-6 text-[#6c5ce7]" />
+                  </div>
+                  <h4 className="text-white font-medium text-center mb-1">Databases</h4>
+                  <p className="text-[#a0a0b0] text-sm text-center">MongoDB, PostgreSQL</p>
                 </div>
               </div>
             </div>

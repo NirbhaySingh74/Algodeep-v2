@@ -50,13 +50,13 @@ function ResetPassword() {
     setSuccessMessage(null);
     setLoading(true);
 
-    console.log("Starting password reset...");
+    // console.log("Starting password reset...");
 
     // Validate passwords match
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
-      console.log("Passwords do not match");
+      // console.log("Passwords do not match");
       return;
     }
 
@@ -65,7 +65,7 @@ function ResetPassword() {
     if (passwordError) {
       setError(passwordError);
       setLoading(false);
-      console.log("Password validation failed:", passwordError);
+      // console.log("Password validation failed:", passwordError);
       return;
     }
 
@@ -82,31 +82,31 @@ function ResetPassword() {
 
       // Success
       setSuccessMessage("Password updated successfully");
-      console.log("Password updated successfully");
+      // console.log("Password updated successfully");
 
       // Check session and redirect
       const { data: { session } } = await supabase.auth.getSession();
-      console.log("Session after update:", session);
+      // console.log("Session after update:", session);
 
       setTimeout(() => {
         if (session) {
-          console.log("Redirecting to /practice/categories");
+          // console.log("Redirecting to /practice/categories");
           router.push("/practice/categories");
         } else {
-          console.log("Redirecting to /login");
+          // console.log("Redirecting to /login");
           router.push("/login");
         }
       }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred");
-      console.log("Caught error:", err);
+      // console.log("Caught error:", err);
     } finally {
       setLoading(false);
-      console.log("Loading set to false");
+      // console.log("Loading set to false");
     }
   };
 
-  console.log("Reset password page rendered");
+  // console.log("Reset password page rendered");
 
   return (
     <div>

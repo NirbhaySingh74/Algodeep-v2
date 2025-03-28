@@ -21,13 +21,13 @@ export default function CompanyPage({ params }: CompaniesPageProps) {
   const fetchCompanyData = useCallback(async (company: string) => {
     setLoading(true);
     try {
-      console.log(`Fetching problems for company: ${company}`); // Debug log
+      // console.log(`Fetching problems for company: ${company}`); // Debug log
       const response = await fetch(`/api/companies/${company}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
       }
       const data = await response.json();
-      console.log("Fetched problems:", data); // Debug log
+      // console.log("Fetched problems:", data); // Debug log
       setCompanyProblems(data);
     } catch (error) {
       console.error("Failed to fetch company problems:", error);
@@ -39,7 +39,7 @@ export default function CompanyPage({ params }: CompaniesPageProps) {
   useEffect(() => {
     if (companyId && companyId !== selectedCompany) {
       console.log(`Setting selected company to: ${companyId}`); // Debug log
-      setSelectedCompany(companyId);
+      // setSelectedCompany(companyId);
       fetchCompanyData(companyId);
     }
   }, [companyId, fetchCompanyData, selectedCompany, setSelectedCompany]);

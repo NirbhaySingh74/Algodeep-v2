@@ -6,6 +6,7 @@ import { ChevronDown, ExternalLink, Star, CheckCircle, Clock } from "lucide-reac
 import { categories, problems, Problem } from "@/data/problems";
 import { useNavbar } from "@/lib/useNavbar";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { toast } from "react-hot-toast";
 
 // Define difficulty colors with explicit types
 const difficultyColors: Record<string, { bg: string; text: string }> = {
@@ -22,13 +23,6 @@ interface ExtendedProblem extends Problem {
   solved_at?: string | null;
 }
 
-// Define user profile type
-interface UserProfile {
-  easy_solved: number;
-  medium_solved: number;
-  hard_solved: number;
-}
-
 // Define user problem data from Supabase
 interface UserProblem {
   problem_id: string;
@@ -40,7 +34,7 @@ interface UserProblem {
 const CategoriesView: React.FC = () => {
   const { viewMode, selectedCategory, setSelectedCategory, updateStat } = useAppStore();
   const { user, isLoading: sessionLoading } = useNavbar();
-  
+
   const [problemsData, setProblemsData] = React.useState<ExtendedProblem[]>(
     problems.map((p) => ({
       ...p,
@@ -54,11 +48,11 @@ const CategoriesView: React.FC = () => {
   const [isInitialFetch, setIsInitialFetch] = React.useState(true);
 
   React.useEffect(() => {
-    console.log("useEffect triggered: ", { user: !!user, sessionLoading, isInitialFetch });
+    // console.log("useEffect triggered: ", { user: !!user, sessionLoading, isInitialFetch });
     if (user?.id) {
       fetchUserProblems();
     } else {
-      console.log("No user, resetting state...");
+      // console.log("No user, resetting state...");
       setProblemsData(
         problems.map((p) => ({
           ...p,
@@ -70,7 +64,7 @@ const CategoriesView: React.FC = () => {
       );
       setIsInitialFetch(false);
       const timeout = setTimeout(() => {
-        console.log("Timeout triggered, forcing isInitialFetch to false");
+        // console.log("Timeout triggered, forcing isInitialFetch to false");
         setIsInitialFetch(false);
       }, 2000);
       return () => clearTimeout(timeout);
@@ -89,10 +83,10 @@ const CategoriesView: React.FC = () => {
       if (error) throw new Error(`Fetch failed: ${error.message}`);
 
       const userProblems = data as UserProblem[];
-      const solvedProblemIds = new Set(userProblems.filter(up => up.solved_at !== null).map(up => up.problem_id));
-      const favoriteProblemIds = new Set(userProblems.filter(up => up.favorite).map(up => up.problem_id));
-      const lastAttemptedMap = new Map(userProblems.map(up => [up.problem_id, up.last_attempted]));
-      const solvedAtMap = new Map(userProblems.map(up => [up.problem_id, up.solved_at]));
+      const solvedProblemIds = new Set(userProblems.filter((up) => up.solved_at !== null).map((up) => up.problem_id));
+      const favoriteProblemIds = new Set(userProblems.filter((up) => up.favorite).map((up) => up.problem_id));
+      const lastAttemptedMap = new Map(userProblems.map((up) => [up.problem_id, up.last_attempted]));
+      const solvedAtMap = new Map(userProblems.map((up) => [up.problem_id, up.solved_at]));
 
       setProblemsData(
         problems.map((problem) => ({
@@ -112,10 +106,14 @@ const CategoriesView: React.FC = () => {
   };
 
   const updateProblemStatus = async (problemId: number, solved: boolean) => {
+    const problem = problemsData.find((p) => p.id === problemId);
+    if (!problem) return;
+
+    // Optimistically update the local state
     setProblemsData((prev) =>
-      prev.map((p) => 
-        p.id === problemId 
-          ? { ...p, solved, solved_at: solved ? new Date().toISOString() : null } 
+      prev.map((p) =>
+        p.id === problemId
+          ? { ...p, solved, solved_at: solved ? new Date().toISOString() : null }
           : p
       )
     );
@@ -126,15 +124,7 @@ const CategoriesView: React.FC = () => {
     }
 
     try {
-      const problem = problemsData.find((p) => p.id === problemId);
-      if (!problem) throw new Error(`Problem ${problemId} not found`);
-
-      const difficultyField = 
-        problem.difficulty === "Easy" 
-          ? "easy_solved" 
-          : problem.difficulty === "Medium" 
-            ? "medium_solved" 
-            : "hard_solved";
+      toast.loading("Saving solved status...", { id: `solved-${problemId}` });
 
       const { error: upsertError } = await supabase
         .from("user_problems")
@@ -150,34 +140,22 @@ const CategoriesView: React.FC = () => {
         );
       if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}`);
 
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select(difficultyField)
-        .eq("id", user.id)
-        .single();
-
-      if (profileError) throw new Error(`Profile fetch failed: ${profileError.message}`);
-      
-      const currentCount = (profileData as Record<string, number>)[difficultyField] || 0;
-      const newCount = solved ? currentCount + 1 : Math.max(currentCount - 1, 0);
-
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ [difficultyField]: newCount })
-        .eq("id", user.id);
-      if (updateError) throw new Error(`Profile update failed: ${updateError.message}`);
-
+      // Update the store (ProgressStats will re-fetch stats from the database)
       updateStat(problem.difficulty as "Easy" | "Medium" | "Hard", solved);
+
+      toast.success("Solved status saved!", { id: `solved-${problemId}` });
     } catch (err) {
       console.error("Update error:", err instanceof Error ? err.message : String(err));
+      // Revert the local state on error
       setProblemsData((prev) =>
-        prev.map((p) => 
-          p.id === problemId 
-            ? { ...p, solved: !solved, solved_at: !solved ? null : p.solved_at } 
+        prev.map((p) =>
+          p.id === problemId
+            ? { ...p, solved: !solved, solved_at: !solved ? null : p.solved_at }
             : p
         )
       );
       setError(err instanceof Error ? err.message : "Failed to update problem status");
+      toast.error("Failed to save solved status.", { id: `solved-${problemId}` });
     }
   };
 
@@ -186,8 +164,9 @@ const CategoriesView: React.FC = () => {
     const problem = problemsData.find((p) => p.id === problemId);
     const newFavoriteStatus = !problem?.favorite;
 
-    setProblemsData((prev) => 
-      prev.map((p) => 
+    // Optimistically update the local state
+    setProblemsData((prev) =>
+      prev.map((p) =>
         p.id === problemId ? { ...p, favorite: newFavoriteStatus } : p
       )
     );
@@ -198,6 +177,8 @@ const CategoriesView: React.FC = () => {
     }
 
     try {
+      toast.loading("Saving favorite status...", { id: `favorite-${problemId}` });
+
       const { error } = await supabase
         .from("user_problems")
         .upsert(
@@ -211,14 +192,20 @@ const CategoriesView: React.FC = () => {
           { onConflict: "user_id,problem_id" }
         );
       if (error) throw new Error(`Favorite upsert failed: ${error.message}`);
+
+      toast.success(newFavoriteStatus ? "Added to favorites!" : "Removed from favorites!", {
+        id: `favorite-${problemId}`,
+      });
     } catch (err) {
       console.error("Favorite update error:", err instanceof Error ? err.message : String(err));
-      setProblemsData((prev) => 
-        prev.map((p) => 
+      // Revert the local state on error
+      setProblemsData((prev) =>
+        prev.map((p) =>
           p.id === problemId ? { ...p, favorite: !newFavoriteStatus } : p
         )
       );
       setError(err instanceof Error ? err.message : "Failed to update favorite status");
+      toast.error("Failed to save favorite status.", { id: `favorite-${problemId}` });
     }
   };
 
@@ -227,8 +214,9 @@ const CategoriesView: React.FC = () => {
     const newLastAttempted = new Date().toISOString();
     const problem = problemsData.find((p) => p.id === problemId);
 
-    setProblemsData((prev) => 
-      prev.map((p) => 
+    // Optimistically update the local state
+    setProblemsData((prev) =>
+      prev.map((p) =>
         p.id === problemId ? { ...p, lastAttempted: newLastAttempted } : p
       )
     );
@@ -239,6 +227,8 @@ const CategoriesView: React.FC = () => {
     }
 
     try {
+      toast.loading("Saving attempt history...", { id: `history-${problemId}` });
+
       const { error } = await supabase
         .from("user_problems")
         .upsert(
@@ -252,14 +242,18 @@ const CategoriesView: React.FC = () => {
           { onConflict: "user_id,problem_id" }
         );
       if (error) throw new Error(`Last attempted upsert failed: ${error.message}`);
+
+      toast.success("Attempt history saved!", { id: `history-${problemId}` });
     } catch (err) {
       console.error("Last attempted update error:", err instanceof Error ? err.message : String(err));
-      setProblemsData((prev) => 
-        prev.map((p) => 
+      // Revert the local state on error
+      setProblemsData((prev) =>
+        prev.map((p) =>
           p.id === problemId ? { ...p, lastAttempted: undefined } : p
         )
       );
       setError(err instanceof Error ? err.message : "Failed to update last attempted");
+      toast.error("Failed to save attempt history.", { id: `history-${problemId}` });
     }
   };
 
@@ -267,7 +261,7 @@ const CategoriesView: React.FC = () => {
     window.open(problem.link, "_blank");
   };
 
-  console.log("Render: ", { user: !!user, sessionLoading, isInitialFetch });
+  // console.log("Render: ", { user: !!user, sessionLoading, isInitialFetch });
 
   if (isInitialFetch && (!user && sessionLoading)) {
     return (
@@ -290,7 +284,6 @@ const CategoriesView: React.FC = () => {
     );
   }
 
-  
   return (
     <>
       {viewMode === "categories" && (
