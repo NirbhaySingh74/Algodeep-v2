@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Code2, Eye, EyeOff } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 function ResetPassword() {
   const router = useRouter();
@@ -12,8 +13,6 @@ function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  
-  // New state for password visibility
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -50,13 +49,10 @@ function ResetPassword() {
     setSuccessMessage(null);
     setLoading(true);
 
-    // console.log("Starting password reset...");
-
     // Validate passwords match
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
-      // console.log("Passwords do not match");
       return;
     }
 
@@ -65,7 +61,6 @@ function ResetPassword() {
     if (passwordError) {
       setError(passwordError);
       setLoading(false);
-      // console.log("Password validation failed:", passwordError);
       return;
     }
 
@@ -76,37 +71,32 @@ function ResetPassword() {
       if (error) {
         setError(error.message);
         setLoading(false);
-        console.log("Supabase error:", error.message);
+        toast.error(error.message);
         return;
       }
 
       // Success
       setSuccessMessage("Password updated successfully");
-      // console.log("Password updated successfully");
+      toast.success("Password updated successfully! Redirecting...");
 
       // Check session and redirect
       const { data: { session } } = await supabase.auth.getSession();
-      // console.log("Session after update:", session);
 
       setTimeout(() => {
         if (session) {
-          // console.log("Redirecting to /practice/categories");
           router.push("/practice/categories");
         } else {
-          // console.log("Redirecting to /login");
           router.push("/login");
         }
-      }, 2000);
+      }, 2000); // Delay to show toast
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
-      // console.log("Caught error:", err);
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
-      // console.log("Loading set to false");
     }
   };
-
-  // console.log("Reset password page rendered");
 
   return (
     <div>

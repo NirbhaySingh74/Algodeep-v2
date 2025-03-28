@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Linkedin, Github, Mail, Briefcase, Code, Server, Database } from "lucide-react";
+import { Linkedin, Github, Mail, Briefcase } from "lucide-react";
 import profilePic from "../../public/profilePic.webp";
 
 export default function CreatorSection() {
@@ -29,7 +29,7 @@ export default function CreatorSection() {
           <div className="flex flex-col lg:flex-row gap-8">
             <div className="lg:w-1/3 flex flex-col items-center">
               <motion.div 
-                className="w-40 h-40 relative rounded-xl overflow-hidden border-2 border-[#6c5ce7]/50 shadow-lg mb-6"
+                className="w-52 h-52 relative rounded-xl overflow-hidden border-2 border-[#6c5ce7]/50 shadow-lg mb-6"
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.3 }}
               >
@@ -38,7 +38,7 @@ export default function CreatorSection() {
                   alt="Profile picture"
                   fill
                   className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 160px"
+                  sizes="(max-width: 768px) 100vw, 208px"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#1e1e2e]/80 to-transparent"></div>
               </motion.div>
@@ -80,61 +80,29 @@ export default function CreatorSection() {
                 >
                   <Mail className="h-5 w-5" />
                 </motion.a>
-              </div>
-              
-              <motion.div
-                className="bg-[#1e1e2e] p-4 rounded-lg border border-[#3d3d5c] w-full"
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-              >
-                <h4 className="text-white text-lg font-medium mb-3">Portfolio</h4>
                 <motion.a
                   href="https://www.nirbhay.work/"
                   target="_blank"
-                  className="flex items-center text-[#a0a0b0] hover:text-[#6c5ce7] transition-colors"
-                  whileHover={{ x: 5 }}
+                  className="w-10 h-10 rounded-full bg-[#292942] flex items-center justify-center text-[#a0a0b0] hover:bg-[#6c5ce7] hover:text-white transition-colors border border-[#3d3d5c]"
+                  whileHover={{ scale: 1.1, backgroundColor: "#6c5ce7", color: "#ffffff" }}
+                  whileTap={{ scale: 0.9 }}
+                  aria-label="Portfolio"
                 >
-                  <span className="mr-2">View Full Portfolio</span>
-                  <Briefcase className="h-4 w-4" />
+                  <Briefcase className="h-5 w-5" />
                 </motion.a>
-              </motion.div>
+              </div>
             </div>
 
             <div className="lg:w-2/3">
               <p className="text-[#a0a0b0] mb-4 leading-relaxed">
-                As a passionate Computer Science graduate from LNCT University, I bring a dynamic blend of technical expertise and innovative problem-solving skills to the world of web development.
+              I'm Nirbhay, a Full Stack Developer with a passion for building scalable, high-performance web applications. As a Computer Science graduate from LNCT University, I specialize in the MERN stack and modern frameworks like Next.js, crafting seamless, user-centric digital experiences.
               </p>
               <p className="text-[#a0a0b0] mb-4 leading-relaxed">
-                My technical arsenal spans the entire web development spectrum, with deep expertise in the MERN stack and modern frameworks like Next.js. I craft scalable, performant applications that seamlessly blend elegant design with robust functionality.
+              With a strong foundation in both frontend and backend development, I thrive on solving complex challenges with clean, efficient code. My expertise extends beyond just writing code—I focus on building robust, intuitive, and visually engaging applications that drive real impact.
               </p>
               <p className="text-[#a0a0b0] mb-4 leading-relaxed">
-                Beyond technical skills, I'm a creative problem-solver who thrives on transforming complex challenges into elegant, user-centric solutions. My approach combines technical precision with a passion for creating impactful digital experiences.
+              Currently, I'm looking for opportunities to contribute my skills and grow in a dynamic environment. Let's build something amazing together!
               </p>
-              
-              <div className="grid grid-cols-3 gap-4 mt-6">
-                <div className="bg-[#1e1e2e] p-4 rounded-lg border border-[#3d3d5c] flex flex-col items-center">
-                  <div className="bg-[#6c5ce7]/20 p-3 rounded-full mb-2">
-                    <Code className="h-6 w-6 text-[#6c5ce7]" />
-                  </div>
-                  <h4 className="text-white font-medium text-center mb-1">Frontend</h4>
-                  <p className="text-[#a0a0b0] text-sm text-center">React, Next.js, Tailwind</p>
-                </div>
-                <div className="bg-[#1e1e2e] p-4 rounded-lg border border-[#3d3d5c] flex flex-col items-center">
-                  <div className="bg-[#6c5ce7]/20 p-3 rounded-full mb-2">
-                    <Server className="h-6 w-6 text-[#6c5ce7]" />
-                  </div>
-                  <h4 className="text-white font-medium text-center mb-1">Backend</h4>
-                  <p className="text-[#a0a0b0] text-sm text-center">Node.js, Express</p>
-                </div>
-                <div className="bg-[#1e1e2e] p-4 rounded-lg border border-[#3d3d5c] flex flex-col items-center">
-                  <div className="bg-[#6c5ce7]/20 p-3 rounded-full mb-2">
-                    <Database className="h-6 w-6 text-[#6c5ce7]" />
-                  </div>
-                  <h4 className="text-white font-medium text-center mb-1">Databases</h4>
-                  <p className="text-[#a0a0b0] text-sm text-center">MongoDB, PostgreSQL</p>
-                </div>
-              </div>
             </div>
           </div>
         </motion.div>

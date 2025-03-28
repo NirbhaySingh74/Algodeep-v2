@@ -10,6 +10,7 @@ import { User, Mail, Calendar, Award, ArrowLeft, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useAppStore } from "@/store/store";
 import { problems } from "@/data/problems";
+import { toast } from "react-hot-toast";
 
 // Define types for user and stats
 interface UserProfile {
@@ -104,10 +105,16 @@ export default function Profile() {
   const handleSignOut = useCallback(async () => {
     try {
       setIsSigningOut(true);
-      await supabase.auth.signOut();
-      router.push("/login", { scroll: false });
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast.success("Successfully logged out! Redirecting to login...");
+      setTimeout(() => {
+        router.push("/login", { scroll: false });
+      }, 2000); // Delay to show toast
     } catch (error) {
       console.error("Error signing out:", error);
+      toast.error("Failed to log out. Please try again.");
       setIsSigningOut(false);
     }
   }, [router]);

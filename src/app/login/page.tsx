@@ -6,12 +6,12 @@ import { Code2, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
 import { useAuthStore } from "@/lib/authStore";
+import { toast } from "react-hot-toast";
 
 function App() {
   const router = useRouter();
-  const [showToast, setShowToast] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const {
     authView,
     loading,
@@ -44,13 +44,16 @@ function App() {
     redirectIfAuthenticated();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (event === "SIGNED_IN" && session) {
-          setShowToast(true); // Show toast on successful login
+          if (authView === "sign_in") {
+            toast.success("Login successful! Welcome back!");
+          } else if (authView === "sign_up") {
+            toast.success("Account created successfully! Welcome aboard!");
+          }
           setTimeout(() => {
-            setShowToast(false); // Hide toast after 3 seconds
             router.push("/practice/categories");
-          }, 3000);
+          }, 2000); // Delay to allow toast to be visible
         } else if (event === "SIGNED_OUT") {
           router.push("/login");
         }
@@ -60,16 +63,21 @@ function App() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [router, checkSession]);
+  }, [router, checkSession, authView]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (authView === "sign_in") {
-      await handleSignIn();
-    } else if (authView === "sign_up") {
-      await handleSignUp();
-    } else if (authView === "forgot_password") {
-      await handleResetPassword();
+    try {
+      if (authView === "sign_in") {
+        await handleSignIn();
+      } else if (authView === "sign_up") {
+        await handleSignUp();
+      } else if (authView === "forgot_password") {
+        await handleResetPassword();
+        toast.success("Reset link sent! Check your email.");
+      }
+    } catch (err) {
+      toast.error("An error occurred. Please try again.");
     }
   };
 
@@ -85,20 +93,6 @@ function App() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom duration-500">
-          <div className="bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border border-white/20">
-            <span className="text-2xl animate-bounce">🎉</span>
-            <div>
-              <p className="font-bold text-lg">Welcome Back!</p>
-              <p className="text-sm">Login Successful</p>
-            </div>
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-white/20 rounded-full animate-ping"></div>
-          </div>
-        </div>
-      )}
-
       <div className="min-h-screen flex flex-col">
         <div className="flex-grow bg-[#1e1e2e] flex items-center justify-center p-4 bg-gradient-to-br from-[#1e1e2e] to-[#2d2d42] overflow-hidden">
           <div className="w-full max-w-md relative mx-auto">
@@ -118,12 +112,12 @@ function App() {
                   Welcome to AlgoGrid
                 </h1>
                 <p className="text-gray-400 text-sm sm:text-base">
-                  {authView === "sign_in" 
-                    ? "Sign in" 
-                    : authView === "sign_up" 
-                      ? "Sign up" 
-                      : "Reset password"} to continue
-                  your coding journey
+                  {authView === "sign_in"
+                    ? "Sign in"
+                    : authView === "sign_up"
+                      ? "Sign up"
+                      : "Reset password"}{" "}
+                  to continue your coding journey
                 </p>
               </div>
 
@@ -132,22 +126,20 @@ function App() {
                 <div className="px-4 sm:px-6">
                   <div className="bg-[#282838] rounded-xl p-1 grid grid-cols-2 gap-1 mb-6">
                     <button
-                      className={`py-2 sm:py-2.5 px-2 sm:px-4 rounded-lg transition-all duration-200 font-medium text-sm sm:text-base ${
-                        authView === "sign_in"
-                          ? "bg-[#6c5ce7] text-white shadow-md"
-                          : "bg-transparent text-gray-300 hover:bg-gray-700/40"
-                      }`}
+                      className={`py-2 sm:py-2.5 px-2 sm:px-4 rounded-lg transition-all duration-200 font-medium text-sm sm:text-base ${authView === "sign_in"
+                        ? "bg-[#6c5ce7] text-white shadow-md"
+                        : "bg-transparent text-gray-300 hover:bg-gray-700/40"
+                        }`}
                       onClick={() => switchAuthView("sign_in")}
                       disabled={loading}
                     >
                       Sign In
                     </button>
                     <button
-                      className={`py-2 sm:py-2.5 px-2 sm:px-4 rounded-lg transition-all duration-200 font-medium text-sm sm:text-base ${
-                        authView === "sign_up"
-                          ? "bg-[#6c5ce7] text-white shadow-md"
-                          : "bg-transparent text-gray-300 hover:bg-gray-700/40"
-                      }`}
+                      className={`py-2 sm:py-2.5 px-2 sm:px-4 rounded-lg transition-all duration-200 font-medium text-sm sm:text-base ${authView === "sign_up"
+                        ? "bg-[#6c5ce7] text-white shadow-md"
+                        : "bg-transparent text-gray-300 hover:bg-gray-700/40"
+                        }`}
                       onClick={() => switchAuthView("sign_up")}
                       disabled={loading}
                     >
@@ -173,10 +165,7 @@ function App() {
 
               {/* Auth Form */}
               <div className="p-4 sm:p-6 pt-2">
-                <form
-                  onSubmit={handleSubmit}
-                  className="space-y-4 sm:space-y-5"
-                >
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                   {/* Form Fields */}
                   {authView === "sign_up" && (
                     <div className="space-y-2">
@@ -344,10 +333,10 @@ function App() {
                       </>
                     ) : (
                       <>
-                        {authView === "sign_in" 
-                          ? "Continue with Email" 
-                          : authView === "sign_up" 
-                            ? "Create Account" 
+                        {authView === "sign_in"
+                          ? "Continue with Email"
+                          : authView === "sign_up"
+                            ? "Create Account"
                             : "Send Reset Link"}
                       </>
                     )}
@@ -355,9 +344,7 @@ function App() {
 
                   {error && (
                     <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-4">
-                      <p className="text-red-400 text-sm text-center">
-                        {error}
-                      </p>
+                      <p className="text-red-400 text-sm text-center">{error}</p>
                     </div>
                   )}
 

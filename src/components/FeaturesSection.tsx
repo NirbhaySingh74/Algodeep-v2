@@ -5,8 +5,8 @@ import {
   Filter,
   Bookmark,
   Star,
-  BrainCircuit,
   Folder,
+  Map
 } from "lucide-react";
 import { JSX, useRef } from "react";
 import { motion, useInView } from "framer-motion";
@@ -25,6 +25,8 @@ export default function FeaturesSection() {
   const isInView = useInView(sectionRef, { once: true, amount: 0.1 });
 
   // Updated Feature Data with explicit typing
+
+
   const features: Feature[] = [
     {
       icon: <Folder className="h-7 w-7 text-[#a29bfe]" />,
@@ -62,10 +64,10 @@ export default function FeaturesSection() {
       iconBgColor: "bg-[#6c5ce7]/20",
     },
     {
-      icon: <BrainCircuit className="h-7 w-7 text-[#a29bfe]" />,
-      title: "Solution Approaches",
+      icon: <Map className="h-7 w-7 text-[#a29bfe]" />, // Replaced BrainCircuit with Map
+      title: "Detailed DSA Roadmap",
       description:
-        "Access multiple solution approaches with detailed explanations and time/space complexity analysis for each problem.",
+        "Follow a structured roadmap designed for DSA learners, guiding you through essential topics and problem-solving skills step-by-step.",
       iconBgColor: "bg-[#6c5ce7]/20",
     },
   ];
