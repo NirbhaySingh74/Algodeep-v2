@@ -1,12 +1,11 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Code2, ArrowLeft, Eye, EyeOff } from "lucide-react";
-import { useRouter } from "next/navigation";
-import Footer from "@/components/Footer";
-import { useAuthStore } from "@/lib/authStore";
-import { toast } from "react-hot-toast";
+// App.js (or wherever your component lives)
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Code2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import Footer from '@/components/Footer';
+import { useAuthStore } from '@/lib/authStore';
+import { toast } from 'react-hot-toast';
 
 function App() {
   const router = useRouter();
@@ -32,115 +31,81 @@ function App() {
     checkSession,
   } = useAuthStore();
 
-  // Check session on mount and redirect if authenticated
   useEffect(() => {
     const redirectIfAuthenticated = async () => {
       const isAuthenticated = await checkSession();
-      if (isAuthenticated) {
-        router.push("/practice/categories");
-      }
+      if (isAuthenticated) router.push('/practice/categories');
     };
 
     redirectIfAuthenticated();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "SIGNED_IN" && session) {
-          if (authView === "sign_in") {
-            toast.success("Login successful! Welcome back!");
-          } else if (authView === "sign_up") {
-            toast.success("Account created successfully! Welcome aboard!");
-          }
-          setTimeout(() => {
-            router.push("/practice/categories");
-          }, 2000); // Delay to allow toast to be visible
-        } else if (event === "SIGNED_OUT") {
-          router.push("/login");
-        }
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        toast.success(authView === 'sign_in' ? 'Login successful! Welcome back!' : 'Account verified and signed in!');
+        setTimeout(() => router.push('/practice/categories'), 2000);
+      } else if (event === 'SIGNED_OUT') {
+        router.push('/login');
       }
-    );
+    });
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    return () => authListener.subscription.unsubscribe();
   }, [router, checkSession, authView]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (authView === "sign_in") {
-        await handleSignIn();
-      } else if (authView === "sign_up") {
-        await handleSignUp();
-      } else if (authView === "forgot_password") {
+      if (authView === 'sign_in') await handleSignIn();
+      else if (authView === 'sign_up') await handleSignUp();
+      else if (authView === 'forgot_password') {
         await handleResetPassword();
-        toast.success("Reset link sent! Check your email.");
+        toast.success('Reset link sent! Check your email.');
       }
     } catch (err) {
-      toast.error("An error occurred. Please try again.");
+      toast.error('An error occurred. Please try again.');
     }
   };
 
-  const switchAuthView = (view: "sign_in" | "sign_up" | "forgot_password") => {
+  const switchAuthView = (view: 'sign_in' | 'sign_up' | 'forgot_password') => {
     setAuthView(view);
     resetForm();
     clearMessages();
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
+  const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   return (
     <div className="flex flex-col min-h-screen">
       <div className="min-h-screen flex flex-col">
         <div className="flex-grow bg-[#1e1e2e] flex items-center justify-center p-4 bg-gradient-to-br from-[#1e1e2e] to-[#2d2d42] overflow-hidden">
           <div className="w-full max-w-md relative mx-auto">
-            {/* Decorative elements */}
             <div className="absolute -top-16 -left-16 w-32 h-32 bg-[#6c5ce7]/10 rounded-full blur-xl"></div>
             <div className="absolute -bottom-20 -right-16 w-40 h-40 bg-[#a29bfe]/10 rounded-full blur-xl"></div>
 
-            {/* Card with glass effect */}
             <div className="backdrop-blur-md bg-[#1e1e2e]/70 border border-[#3d3d5c]/50 rounded-2xl shadow-2xl overflow-hidden">
-              {/* Logo and Title */}
               <div className="text-center pt-8 pb-6 px-4 sm:px-6">
                 <div className="flex justify-center mb-4 relative">
                   <div className="absolute -z-10 w-20 h-20 bg-[#a29bfe]/20 rounded-full blur-md"></div>
                   <Code2 className="h-14 w-14 text-[#a29bfe] drop-shadow-lg" />
                 </div>
-                <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">
-                  Welcome to AlgoGrid
-                </h1>
+                <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">Welcome to AlgoGrid</h1>
                 <p className="text-gray-400 text-sm sm:text-base">
-                  {authView === "sign_in"
-                    ? "Sign in"
-                    : authView === "sign_up"
-                      ? "Sign up"
-                      : "Reset password"}{" "}
-                  to continue your coding journey
+                  {authView === 'sign_in' ? 'Sign in' : authView === 'sign_up' ? 'Sign up' : 'Reset password'} to continue your coding journey
                 </p>
               </div>
 
-              {/* Auth Toggle - Only show for sign in/up */}
-              {authView !== "forgot_password" && (
+              {authView !== 'forgot_password' && (
                 <div className="px-4 sm:px-6">
                   <div className="bg-[#282838] rounded-xl p-1 grid grid-cols-2 gap-1 mb-6">
                     <button
-                      className={`py-2 sm:py-2.5 px-2 sm:px-4 rounded-lg transition-all duration-200 font-medium text-sm sm:text-base ${authView === "sign_in"
-                        ? "bg-[#6c5ce7] text-white shadow-md"
-                        : "bg-transparent text-gray-300 hover:bg-gray-700/40"
-                        }`}
-                      onClick={() => switchAuthView("sign_in")}
+                      className={`py-2 sm:py-2.5 px-2 sm:px-4 rounded-lg transition-all duration-200 font-medium text-sm sm:text-base ${authView === 'sign_in' ? 'bg-[#6c5ce7] text-white shadow-md' : 'bg-transparent text-gray-300 hover:bg-gray-700/40'}`}
+                      onClick={() => switchAuthView('sign_in')}
                       disabled={loading}
                     >
                       Sign In
                     </button>
                     <button
-                      className={`py-2 sm:py-2.5 px-2 sm:px-4 rounded-lg transition-all duration-200 font-medium text-sm sm:text-base ${authView === "sign_up"
-                        ? "bg-[#6c5ce7] text-white shadow-md"
-                        : "bg-transparent text-gray-300 hover:bg-gray-700/40"
-                        }`}
-                      onClick={() => switchAuthView("sign_up")}
+                      className={`py-2 sm:py-2.5 px-2 sm:px-4 rounded-lg transition-all duration-200 font-medium text-sm sm:text-base ${authView === 'sign_up' ? 'bg-[#6c5ce7] text-white shadow-md' : 'bg-transparent text-gray-300 hover:bg-gray-700/40'}`}
+                      onClick={() => switchAuthView('sign_up')}
                       disabled={loading}
                     >
                       Sign Up
@@ -149,11 +114,10 @@ function App() {
                 </div>
               )}
 
-              {/* Back button for forgot password */}
-              {authView === "forgot_password" && (
+              {authView === 'forgot_password' && (
                 <div className="px-4 sm:px-6">
                   <button
-                    onClick={() => switchAuthView("sign_in")}
+                    onClick={() => switchAuthView('sign_in')}
                     className="flex items-center mb-6 text-gray-300 hover:text-white transition-colors"
                     disabled={loading}
                   >
@@ -163,18 +127,11 @@ function App() {
                 </div>
               )}
 
-              {/* Auth Form */}
               <div className="p-4 sm:p-6 pt-2">
                 <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-                  {/* Form Fields */}
-                  {authView === "sign_up" && (
+                  {authView === 'sign_up' && (
                     <div className="space-y-2">
-                      <label
-                        htmlFor="full_name"
-                        className="block text-sm font-medium text-gray-300 mb-1"
-                      >
-                        Full Name
-                      </label>
+                      <label htmlFor="full_name" className="block text-sm font-medium text-gray-300 mb-1">Full Name</label>
                       <div className="relative">
                         <input
                           type="text"
@@ -187,18 +144,8 @@ function App() {
                           required
                         />
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <svg
-                            className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
+                          <svg className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
                         </div>
                       </div>
@@ -206,12 +153,7 @@ function App() {
                   )}
 
                   <div className="space-y-2">
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-medium text-gray-300 mb-1"
-                    >
-                      Email
-                    </label>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">Email</label>
                     <div className="relative">
                       <input
                         type="email"
@@ -224,45 +166,26 @@ function App() {
                         required
                       />
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg
-                          className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                          />
+                        <svg className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                       </div>
                     </div>
                   </div>
 
-                  {(authView === "sign_in" || authView === "sign_up") && (
+                  {(authView === 'sign_in' || authView === 'sign_up') && (
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <label
-                          htmlFor="password"
-                          className="block text-sm font-medium text-gray-300 mb-1"
-                        >
-                          Password
-                        </label>
-                        {authView === "sign_in" && (
-                          <button
-                            type="button"
-                            onClick={() => switchAuthView("forgot_password")}
-                            className="text-xs text-[#a29bfe] hover:text-[#6c5ce7] transition-colors"
-                          >
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                        {authView === 'sign_in' && (
+                          <button type="button" onClick={() => switchAuthView('forgot_password')} className="text-xs text-[#a29bfe] hover:text-[#6c5ce7] transition-colors">
                             Forgot password?
                           </button>
                         )}
                       </div>
                       <div className="relative">
                         <input
-                          type={showPassword ? "text" : "password"}
+                          type={showPassword ? 'text' : 'password'}
                           id="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
@@ -272,31 +195,17 @@ function App() {
                           required
                         />
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <svg
-                            className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                            />
+                          <svg className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                           </svg>
                         </div>
                         <button
                           type="button"
                           onClick={togglePasswordVisibility}
                           className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
-                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
-                          ) : (
-                            <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
-                          )}
+                          {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
                         </button>
                       </div>
                     </div>
@@ -309,36 +218,14 @@ function App() {
                   >
                     {loading ? (
                       <>
-                        <svg
-                          className="animate-spin h-4 w-4 sm:h-5 sm:w-5 mr-2 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
+                        <svg className="animate-spin h-4 w-4 sm:h-5 sm:w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                         Processing...
                       </>
                     ) : (
-                      <>
-                        {authView === "sign_in"
-                          ? "Continue with Email"
-                          : authView === "sign_up"
-                            ? "Create Account"
-                            : "Send Reset Link"}
-                      </>
+                      authView === 'sign_in' ? 'Continue with Email' : authView === 'sign_up' ? 'Create Account' : 'Send Reset Link'
                     )}
                   </button>
 
@@ -350,9 +237,7 @@ function App() {
 
                   {successMessage && (
                     <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 mt-4">
-                      <p className="text-green-400 text-sm text-center">
-                        {successMessage}
-                      </p>
+                      <p className="text-green-400 text-sm text-center">{successMessage}</p>
                     </div>
                   )}
                 </form>
